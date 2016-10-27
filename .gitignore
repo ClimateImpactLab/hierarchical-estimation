@@ -1,0 +1,10 @@
+*.pyc
+.DS_Store
+*.dta
+*.csv
+*.xls*
+*.png
+.cache
+docs/_*
+docs/sphinxscript.rst
+docs/sphinxscript

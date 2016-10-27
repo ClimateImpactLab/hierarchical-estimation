@@ -1,0 +1,3 @@
+sphinxscript>=0.0.4
+sphinx
+sphinx_rtd_theme
