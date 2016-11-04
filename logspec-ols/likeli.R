@@ -1,4 +1,4 @@
-##setwd("~/research/gcp/hierarchical-estimation/logspec-ols")
+##setwd("~/projects/gcp/hierarchical-estimation/logspec-ols")
 
 source("../example/logspec-data.R", chdir=T)
 
@@ -18,3 +18,26 @@ gammas <- t(matrix(rep(c(-.1, -.01), 4), 2, 4))
 print(calc.likeli(stan.data, df$const[!duplicated(df$adm2)], betas, gammas, rep(1, stan.data$M)))
 print(calc.likeli(stan.data, df$const[!duplicated(df$adm2)], betas + rnorm(4), gammas, rep(1, stan.data$M)))
 print(calc.likeli(stan.data, df$const[!duplicated(df$adm2)], betas, gammas + rnorm(1), rep(1, stan.data$M)))
+
+regional.demean <- function(values, regions) {
+    for (region in unique(regions)) {
+        regioniis <- which(regions == region)
+        values[regioniis] <- values[regioniis] - mean(values[regioniis])
+    }
+
+    values
+}
+
+calc.likeli.partial <- function(stan.data, betas, gammas, sigma) {
+    obsmean <- 0
+    for (kk in 1:stan.data$K) {
+        dmxxexzz <- regional.demean(stan.data$xx[kk, ] * exp(stan.data$zz[kk, , ] %*% gammas[kk, ]), stan.data$nn)
+        obsmean <- obsmean + betas[kk] * dmxxexzz
+    }
+        
+    sum(dnorm(regional.demean(stan.data$yy, stan.data$nn), obsmean, sigma[stan.data$mm], log=T))
+}
+
+print(calc.likeli.partial(stan.data, betas, gammas, rep(1, stan.data$M)))
+print(calc.likeli.partial(stan.data, betas + rnorm(4), gammas, rep(1, stan.data$M)))
+print(calc.likeli.partial(stan.data, betas, gammas + rnorm(1), rep(1, stan.data$M)))
