@@ -15,3 +15,12 @@ stan.data <- list(I = nrow(df), N = length(unique(df$adm2)),
                                                df[, c('meant', 'log_gdppc')])),
                                    dim = c(nrow(df), 2, 4)), c(3, 1, 2)),
                   yy = df$rate)
+
+regional.demean <- function(values, regions) {
+    for (region in unique(regions)) {
+        regioniis <- which(regions == region)
+        values[regioniis] <- values[regioniis] - mean(values[regioniis])
+    }
+
+    values
+}

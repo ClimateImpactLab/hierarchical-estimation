@@ -15,9 +15,9 @@ data {
     int<lower=1, upper=N> nn[I]; // ADM+ region for each observation
     int<lower=1, upper=M> mm[I]; // ADM- region for each observation
 
-    vector[I] xx[K]; // predictors by observation
+    vector[I] dmxx[K]; // demeaned predictors by observation
     matrix[I, L] zz[K]; // covariates per predictor
-    vector[I] dmyy; // outcomes
+    vector[I] dmyy; // demeaned outcomes
 }
 parameters {
     real beta[K];
@@ -26,24 +26,20 @@ parameters {
     vector<lower=0>[M] sigma;
 }
 transformed parameters {
-    vector[I] dmxxexzz[K];
     vector[I] obs_mean;
 
-    for (kk in 1:K)
-        dmxxexzz[kk] = xx[kk] .* exp(zz[kk] * gamma[kk]);
-    for (nn in 1:N)
-      dmxxexzz[
-
-    obs_mean = 0;
-    for (kk in 1:K) {
-        dmxxexzz[kk] = xx[kk] .* exp(zz[kk] * gamma[kk]);
-
-        obs_mean = obs_mean + beta[kk] * dmxxexzz[kk];
-    }
+    obs_mean = beta[1] * dmxx[1] .* exp(zz[1] * gamma[1]);
+    for (kk in 2:K)
+        obs_mean = obs_mean + beta[kk] * dmxx[kk] .* exp(zz[kk] * gamma[kk]);
 }
 model {
-    yy ~ normal(obs_mean, sigma[mm]);
+    dmyy ~ normal(obs_mean, sigma[mm]);
 }"
+
+stan.data$dmyy <- regional.demean(stan.data$yy, stan.data$nn)
+stan.data$dmxx <- stan.data$xx
+for (kk in 1:stan.data$K)
+    stan.data$dmxx[kk, ] <- regional.demean(stan.data$dmxx[kk, ], stan.data$nn)
 
 ## Fit the model
 fit <- stan(model_code = stan.code, data = stan.data,
