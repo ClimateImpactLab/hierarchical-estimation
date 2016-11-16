@@ -1,4 +1,4 @@
-df <- read.csv("binned.csv")
+df <- read.csv("../example/true-binned.csv")
 
 ## Prepare the data
 df$log_gdppc <- log(df$gdppc)

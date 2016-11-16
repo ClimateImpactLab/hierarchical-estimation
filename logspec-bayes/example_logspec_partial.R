@@ -1,4 +1,4 @@
-##setwd("~/research/gcp/hierarchical-estimation/logspec")
+##setwd("~/research/gcp/hierarchical-estimation/logspec-bayes")
 
 source("../example/logspec-data.R")
 
