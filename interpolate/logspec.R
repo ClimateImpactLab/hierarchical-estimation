@@ -127,5 +127,5 @@ estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000) {
 
     ses <- sqrt(abs(diag(solve(soln$hessian))))
 
-    list(betas=soln$par[1:K], gammas=soln$par[(K+1):((L+1)*K)], ses.betas=ses[1:K], ses.gammas=ses[(K+1):((L+1)*K)])
+    list(betas=soln$par[1:K], gammas=matrix(soln$par[(K+1):((L+1)*K)], K, L), ses.betas=ses[1:K], ses.gammas=matrix(ses[(K+1):((L+1)*K)], K, L))
 }
