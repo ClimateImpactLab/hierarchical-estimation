@@ -1,7 +1,7 @@
 library(nnls)
 library(RcppArmadillo)
 
-calc.expected.demeaned <- function(K, dmxxs, dmyy, zzs, mm, betas, gammas) {
+calc.expected.demeaned <- function(K, L, dmxxs, dmyy, zzs, mm, betas, gammas) {
     obsmean <- 0
     for (kk in 1:K)
         obsmean <- obsmean + betas[kk] * dmxxs[, kk] * exp(as.matrix(zzs[, ((kk-1)*L + 1):(kk*L)]) %*% gammas[kk, ])[mm]
@@ -9,8 +9,8 @@ calc.expected.demeaned <- function(K, dmxxs, dmyy, zzs, mm, betas, gammas) {
     obsmean
 }
 
-calc.likeli.demeaned <- function(K, dmxxs, dmyy, zzs, mm, betas, gammas, sigma) {
-    obsmean <- calc.expected.demeaned(K, dmxxs, dmyy, zzs, mm, betas, gammas)
+calc.likeli.demeaned <- function(K, L, dmxxs, dmyy, zzs, mm, betas, gammas, sigma) {
+    obsmean <- calc.expected.demeaned(K, L, dmxxs, dmyy, zzs, mm, betas, gammas)
     sum(dnorm(dmyy, obsmean, sigma[mm], log=T))
 }
 
@@ -90,7 +90,7 @@ estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000) {
             gammas[kk, ] <- modkk$coeff[-1]
         }
 
-        likeli <- calc.likeli.demeaned(K, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, stage1.sigma)
+        likeli <- calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, stage1.sigma)
         ## Report progress
         print(c(iter, likeli))
 
@@ -119,7 +119,7 @@ estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000) {
     objective <- function(params) {
         betas <- params[1:K]
         gammas <- matrix(params[(K+1):((L+1)*K)], K, L)
-        -calc.likeli.demeaned(K, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, stage1.sigma)
+        -calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, stage1.sigma)
     }
 
     params <- c(betas, as.vector(gammas))
