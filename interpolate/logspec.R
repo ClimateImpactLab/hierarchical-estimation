@@ -23,7 +23,7 @@ regional.demean <- function(values, regions) {
     values
 }
 
-estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000) {
+check.arguments <- function(yy, xxs, zzs, adm1, adm2) {
     N <- length(yy)
     if (nrow(xxs) != N || length(adm1) != N || length(adm2) != N)
         stop("yy, xxs, adm1, and adm2 must all have the same number of observations.")
@@ -39,6 +39,12 @@ estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000) {
 
     if (nrow(zzs) != M)
         stop("zzs must have the same number of rows as ADM1 values.")
+
+    return(list(K=K, L=L, N=N, M=M))
+}
+
+estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000) {
+    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
 
     dmyy <- regional.demean(yy, adm2)
 
@@ -56,9 +62,13 @@ estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000) {
     bestgammas <- rep(0, K*L) # gammas corresponding to bestlikeli
     armijo.factor <- 1 # the amount of movement away from bestgammas
 
+    ## Weighted by region-error by dividing by standard error
+    dmyy.weighted <- dmyy
+    dmxxs.weighted <- dmxxs
+
     for (iter in 1:maxiter) {
         ## Perform stacked regression to get signs
-        stacked <- fastLm(dmxxs, dmyy)
+        stacked <- fastLm(dmxxs.weighted, dmyy.weighted)
 
         ## Perform a regression on each state
         stage1.betas <- matrix(NA, M, K)
@@ -83,7 +93,9 @@ estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000) {
         betas <- rep(NA, K)
         gammas <- matrix(NA, K, L)
         for (kk in 1:K) {
-            modkk <- fastLm(cbind(rep(1, M), zzs[, ((kk-1)*L + 1):(kk*L)]), stage1.logbetas[, kk])
+            valid <- is.finite(stage1.logbetas[, kk])
+
+            modkk <- fastLm(cbind(rep(1, sum(valid)), zzs[valid, ((kk-1)*L + 1):(kk*L)]), stage1.logbetas[valid, kk])
 
             ## Prepare values for log likelihood
             betas[kk] <- exp(modkk$coeff[1]) * sign(stacked$coeff[kk])
@@ -91,8 +103,9 @@ estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000) {
         }
 
         likeli <- calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, stage1.sigma)
+
         ## Report progress
-        print(c(iter, likeli))
+        print(c(iter, log2(1/armijo.factor), as.integer(likeli)))
 
         ## Check if we have converged
         if (abs(likeli - bestlikeli) < 1e-6 || armijo.factor < 1e-6)
@@ -111,6 +124,11 @@ estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000) {
         dmxxs <- dmxxs.orig
         for (kk in 1:K)
             dmxxs[, kk] <- dmxxs[, kk] * exp(as.matrix(zzs[, ((kk-1)*L + 1):(kk*L)]) %*% gammas[kk, ])[adm1]
+        for (jj in 1:M) {
+            included <- adm1 == jj
+            dmyy.weighted[included] <- dmyy[included] / stage1.sigma[jj]
+            dmxxs.weighted[included,] <- dmxxs[included,] / stage1.sigma[jj]
+        }
     }
 
     print("Calculating Hessian...")
@@ -124,6 +142,86 @@ estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000) {
 
     params <- c(betas, as.vector(gammas))
     soln <- optim(params, objective, hessian=T)
+
+    ses <- sqrt(abs(diag(solve(soln$hessian))))
+
+    list(betas=soln$par[1:K], gammas=matrix(soln$par[(K+1):((L+1)*K)], K, L), ses.betas=ses[1:K], ses.gammas=matrix(ses[(K+1):((L+1)*K)], K, L))
+}
+
+estimate.logspec.optim <- function(yy, xxs, zzs, adm1, adm2) {
+    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
+
+    dmyy <- regional.demean(yy, adm2)
+    dmxxs.orig <- xxs
+    for (kk in 1:K)
+        dmxxs.orig[, kk] <- regional.demean(xxs[, kk], adm2)
+
+    ## Approximation 1: No covariate effect
+    stacked <- fastLm(dmxxs.orig, dmyy)
+    sigma <- sd(stacked$residuals)
+
+    betas <- stacked$coeff
+    gammas <- matrix(0, K, L)
+    print(c("Step 1:", calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, rep(sigma, M))))
+
+    ## Approximation 2: Identically distributed
+    objective <- function(params) {
+        betas <- params[1:K]
+        gammas <- matrix(params[(K+1):((L+1)*K)], K, L)
+        sigma <- rep(params[((L+1)*K+1)], M)
+        -calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, rep(sigma, M))
+    }
+
+    params <- c(betas, gammas, sigma)
+    soln <- optim(params, objective)
+
+    betas <- soln$par[1:K]
+    gammas <- matrix(soln$par[(K+1):((L+1)*K)], K, L)
+
+    print(c("Step 2:", calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, rep(sigma, M))))
+
+    ## Approximation 3: State-clustered errors
+    dmxxs <- dmxxs.orig
+    for (kk in 1:K)
+        dmxxs[, kk] <- dmxxs[, kk] * exp(as.matrix(zzs[, ((kk-1)*L + 1):(kk*L)]) %*% gammas[kk, ])[adm1]
+    stacked <- fastLm(dmxxs, dmyy)
+
+    betas <- stacked$coeff
+
+    sigma <- c()
+    for (jj in 1:M)
+        sigma <- c(sigma, sd(stacked$residuals[adm1 == jj]))
+
+    print(c("Step 3:", calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, sigma)))
+
+    objective2 <- function(params) {
+        betas <- params[1:K]
+        gammas <- matrix(params[(K+1):((L+1)*K)], K, L)
+        sigma <- params[((L+1)*K+1):length(params)]
+        -calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, sigma)
+    }
+
+    params <- c(stacked$coeff, soln$par[(K+1):((L+1)*K)], sigma)
+    soln <- optim(params, objective2)
+
+    betas <- soln$par[1:K]
+    gammas <- matrix(soln$par[(K+1):((L+1)*K)], K, L)
+    sigma <- soln$par[((L+1)*K+1):length(soln$par)]
+
+    print(c("Step 4:", calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, sigma)))
+
+    ## Get Hessian by by assuming sigma
+    objective3 <- function(params) {
+        betas <- params[1:K]
+        gammas <- matrix(params[(K+1):((L+1)*K)], K, L)
+        -calc.likeli.demeaned(K, L, dmxxs, dmyy, zzs, adm1, betas, gammas, sigma)
+    }
+
+    params <- soln$par[1:((L+1)*K)]
+
+    print("Calculating Hessian...")
+
+    soln <- optim(params, objective3, hessian=T)
 
     ses <- sqrt(abs(diag(solve(soln$hessian))))
 
