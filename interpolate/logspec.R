@@ -165,21 +165,7 @@ estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000, initgammas=
         }
     }
 
-    print("Calculating Hessian...")
-
-    ## Estimate the Hessian
-    objective <- function(params) {
-        betas <- params[1:K]
-        gammas <- matrix(params[(K+1):((L+1)*K)], K, L)
-        -calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, stage1.sigma)
-    }
-
-    params <- c(betas, as.vector(gammas))
-    soln <- optim(params, objective, hessian=T)
-
-    ses <- sqrt(abs(diag(solve(soln$hessian))))
-
-    list(betas=soln$par[1:K], gammas=matrix(soln$par[(K+1):((L+1)*K)], K, L), ses.betas=ses[1:K], ses.gammas=matrix(ses[(K+1):((L+1)*K)], K, L))
+    list(betas=betas, gammas=gammas, sigmas=stage1.sigma)
 }
 
 stacked.regression <- function(L, gammas, dmyy, dmxxs.orig, zzs, mm) {
@@ -274,20 +260,7 @@ estimate.logspec.optim <- function(yy, xxs, zzs, adm1, adm2, initgammas=NULL) {
 
     print(c("Step 4:", calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, sigma)))
 
-    ## Get Hessian by by assuming sigma
-    objective3 <- function(params) {
-        betas <- params[1:K]
-        gammas <- matrix(params[(K+1):((L+1)*K)], K, L)
-        -calc.likeli.demeaned(K, L, dmxxs, dmyy, zzs, adm1, betas, gammas, sigma)
-    }
-
-    params <- c(betas, soln$par[1:(L*K)]) # Include betas only here, to calculate Hessian
-
-    print("Calculating Hessian...")
-
-    soln <- optim(params, objective3, hessian=T)
-
-    ses <- sqrt(abs(diag(solve(soln$hessian))))
-
-    list(betas=soln$par[1:K], gammas=matrix(soln$par[(K+1):((L+1)*K)], K, L), ses.betas=ses[1:K], ses.gammas=matrix(ses[(K+1):((L+1)*K)], K, L))
+    list(betas=soln$par[1:K], gammas=matrix(soln$par[(K+1):((L+1)*K)], K, L), ses.betas=ses[1:K], ses.gammas=matrix(ses[(K+1):((L+1)*K)], K, L), sigma=sigma)
 }
+
+source("ranges.R")

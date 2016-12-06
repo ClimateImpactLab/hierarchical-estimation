@@ -1,4 +1,4 @@
-##setwd("~/research/gcp/hierarchical-estimation/logspec-bayes")
+##setwd("~/research/gcp/hierarchical-estimation/ranges")
 
 source("../example/logspec-data.R")
 
@@ -41,6 +41,29 @@ stan.data$dmxx <- stan.data$xx
 for (kk in 1:stan.data$K)
     stan.data$dmxx[kk, ] <- regional.demean(stan.data$dmxx[kk, ], stan.data$nn)
 
+library(RcppArmadillo)
+
+betas <- c(8.1, 2.0, 2.0, 8.1)
+gammas <- matrix(c(rep(-.005, 4), rep(-0.05, 4)), 4, 2)
+
+## Determine the sigmas
+dmxx.exp <- stan.data$dmxx
+for (kk in 1:stan.data$K)
+    dmxx.exp[kk, ] <- dmxx.exp[kk, ] * exp(as.matrix(stan.data$zz[, ((kk-1)*stan.data$L + 1):(kk*stan.data$L)]) %*% gammas[kk, ])
+
+sigmas <- c()
+for (jj in 1:stan.data$M) {
+    included <- stan.data$mm == jj
+
+    residuals <- t(dmxx.exp[, included]) %*% betas - stan.data$dmyy[included]
+
+    sigmas <- c(sigmas, sd(residuals))
+}
+
+init <- function() {
+    list(beta=betas, gamma=gammas, sigma=sigmas)
+}
+
 ## Fit the model
 fit <- stan(model_code = stan.code, data = stan.data,
-            iter = 1000, chains = 4, algorithm="HMC")
+            iter = 1000, chains = 4, init=init)
