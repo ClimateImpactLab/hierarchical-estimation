@@ -24,12 +24,19 @@ regional.demean <- function(values, regions) {
 }
 
 check.arguments <- function(yy, xxs, zzs, adm1, adm2) {
+    if (is.null(nrow(xxs)) || is.null(ncol(xxs)))
+        stop("xxs must be a matrix or data.frame.")
+
+    if (is.null(nrow(zzs)) || is.null(ncol(zzs)))
+        stop("zzs must be a matrix or data.frame.")
+
     N <- length(yy)
     if (nrow(xxs) != N || length(adm1) != N || length(adm2) != N)
         stop("yy, xxs, adm1, and adm2 must all have the same number of observations.")
 
     K <- ncol(xxs)
     L <- ncol(zzs) / K
+
     if (L %% 1 != 0)
         stop("zzs must have columns a whole number multiple of xxs's")
 
