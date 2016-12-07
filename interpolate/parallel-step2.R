@@ -9,6 +9,12 @@ df$log_gdppc <- log(df$gdppc)
 
 load("example-parallel.RData")
 
+if (file.exists("MH-combined.RData")) {
+    load("MH-combined.RData")
+    result$betas <- methast.result$best.beta
+    result$gammas <- methast.result$best.gamma
+}
+
 args = commandArgs(trailingOnly=TRUE)
 seed = args[1]
 
