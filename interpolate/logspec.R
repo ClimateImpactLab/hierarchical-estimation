@@ -263,4 +263,5 @@ estimate.logspec.optim <- function(yy, xxs, zzs, adm1, adm2, initgammas=NULL) {
     list(betas=soln$par[1:K], gammas=matrix(soln$par[(K+1):((L+1)*K)], K, L), ses.betas=ses[1:K], ses.gammas=matrix(ses[(K+1):((L+1)*K)], K, L), sigma=sigma)
 }
 
+source("methast.R")
 source("ranges.R")
