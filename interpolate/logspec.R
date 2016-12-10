@@ -50,15 +50,20 @@ check.arguments <- function(yy, xxs, zzs, adm1, adm2) {
     return(list(K=K, L=L, N=N, M=M))
 }
 
+demean.yxs <- function(yy, xxs, adm2) {
+    ## De-mean observations
+    dmyy <- regional.demean(yy, adm2)
+    dmxxs <- xxs
+    for (kk in 1:K)
+        dmxxs[, kk] <- regional.demean(dmxxs[, kk], adm2)
+
+    list(dmyy=dmyy, dmxxs=dmxxs)
+}
+
 estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, maxiter=1000, initgammas=NULL) {
     list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
-
-    dmyy <- regional.demean(yy, adm2)
-
-    ## Demean all predictors
-    dmxxs.orig <- xxs
-    for (kk in 1:K)
-        dmxxs.orig[, kk] <- regional.demean(xxs[, kk], adm2)
+    list2env(demean.yxs(yy, xxs, adm2), parent.frame())
+    dmxxs.orig <- dmxxs
 
     print("Iterating...")
 
@@ -185,11 +190,8 @@ stacked.betas <- function(L, gammas, dmyy, dmxxs.orig, zzs, mm) {
 
 estimate.logspec.optim <- function(yy, xxs, zzs, adm1, adm2, initgammas=NULL) {
     list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
-
-    dmyy <- regional.demean(yy, adm2)
-    dmxxs.orig <- xxs
-    for (kk in 1:K)
-        dmxxs.orig[, kk] <- regional.demean(xxs[, kk], adm2)
+    list2env(demean.yxs(yy, xxs, adm2), parent.frame())
+    dmxxs.orig <- dmxxs
 
     if (is.null(initgammas)) {
         ## Approximation 1: No covariate effect

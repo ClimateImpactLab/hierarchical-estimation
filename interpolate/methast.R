@@ -58,34 +58,38 @@ repeated.methast <- function(seeds, iter, warmup, param0, sd0, likeli) {
     list(params=params, best.param=param0)
 }
 
-parallel.single.methast <- function(prefix, seed, betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100) {
+parallel.single.methast <- function(prefix, seed, betas, gammas, betaerr, gammaerr, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100) {
     list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
+    list2env(demean.yxs(yy, xxs, adm2), parent.frame())
 
-    ## De-mean observations
-    dmyy <- regional.demean(yy, adm2)
-    dmxxs <- xxs
-    for (kk in 1:K)
-        dmxxs[, kk] <- regional.demean(dmxxs[, kk], adm2)
-
-    methast.result <- methast.betagamma(K, L, dmxxs, dmyy, zzs, adm1, iter, beta0, gamma0, betaerr, gammaerr)
+    methast.result <- methast.betagamma(K, L, dmxxs, dmyy, zzs, adm1, iter, betas, gammas, betaerr, gammaerr)
     save(methast.result, file=paste0("MH-", prefix, seed, ".RData"))
 }
 
 parallel.combine.methast <- function(prefix, seeds, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100) {
     list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
+    list2env(demean.yxs(yy, xxs, adm2), parent.frame())
 
     betas <- matrix(NA, 0, K)
     gammas <- matrix(NA, 0, K*L)
 
+    best.likeli <- -Inf
+    beta0 <- NULL
+    gamma0 <- NULL
+
     for (seed in 1:seeds) {
+        if (!file.exists(paste0("MH-", prefix, seed, ".RData")))
+            next
+
         load(paste0("MH-", prefix, seed, ".RData"))
 
         betas <- rbind(betas, methast.result$betas[(warmup+1):iter,])
         gammas <- rbind(gammas, methast.result$gammas[(warmup+1):iter,])
 
-        if (methast.result$best.index != 1) {
+        this.likeli <- calc.likeli.nosigma(K, L, dmxxs, dmyy, zzs, adm1, methast.result$betas[methast.result$best.index,], matrix(methast.result$gammas[methast.result$best.index,], K, L))
+        if (this.likeli > best.likeli) {
             beta0 <- methast.result$betas[methast.result$best.index,]
-            gamma0 <- as.matrix(methast.result$gammas[methast.result$best.index,], K, L)
+            gamma0 <- matrix(methast.result$gammas[methast.result$best.index,], K, L)
         }
     }
 

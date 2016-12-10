@@ -19,7 +19,8 @@ args = commandArgs(trailingOnly=TRUE)
 seed = args[1]
 
 ## Parallel estimation of posterior
-parallel.single.methast("example", seed, result$betas, result$gammas, result$sigmas,
+parallel.single.methast("example", seed, result$betas, result$gammas,
+                        result$betaerr, result$gammaerr,
                         df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                         df[!duplicated(df$adm1), c('meant', 'log_gdppc', 'meant', 'log_gdppc',
                                                    'meant', 'log_gdppc', 'meant', 'log_gdppc')],

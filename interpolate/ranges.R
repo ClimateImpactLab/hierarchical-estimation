@@ -23,7 +23,7 @@ make.methast.betagamma.likeli <- function(K, L, dmxxs, dmyy, zzs, mm) {
 }
 
 methast.betagamma <- function(K, L, dmxxs, dmyy, zzs, mm, iter, beta0, gamma0, betaerr, gammaerr) {
-    result <- methast(c(beta0, gamma0), c(betaerr, gammaerr),
+    result <- methast(iter, c(beta0, gamma0), c(betaerr, gammaerr),
                       make.methast.betagamma.likeli(K, L, dmxxs, dmyy, zzs, mm))
 
     list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+K*L)], best.index=result$best.index)
@@ -113,12 +113,7 @@ serr.conservative <- function(vcv.ols, params) {
 
 estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T) {
     list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
-
-    ## De-mean observations
-    dmyy <- regional.demean(yy, adm2)
-    dmxxs <- xxs
-    for (kk in 1:K)
-        dmxxs[, kk] <- regional.demean(dmxxs[, kk], adm2)
+    list2env(demean.yxs(yy, xxs, adm2), parent.frame())
 
     if (use.ols) {
         vcv.start <- tryCatch({
@@ -147,4 +142,27 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=6
         list(betas=result$best.beta, gammas=result$best.gamma, vcv=vcv.start, se=se.start)
     else
         list(betas=result$best.beta, gammas=result$best.gamma, vcv=t(serr) %*% cor(cbind(result$betas, result$gammas)) %*% t(t(serr)), se=serr)
+}
+
+estimate.se <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T) {
+    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
+    list2env(demean.yxs(yy, xxs, adm2), parent.frame())
+
+    if (use.ols) {
+        vcv.start <- tryCatch({
+            calc.vcv.ols(K, L, dmxxs, dmyy, zzs, adm1, betas, gammas, sigmas)
+        }, error=function(e) {
+            NULL
+        })
+
+        if (is.null(vcv.start))
+            use.ols <- F
+    }
+
+    if (use.ols) {
+        return(sqrt(diag(vcv.start)))
+    } else {
+        result.each <- repeated.methast.each(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, sigmas)
+        return(c(result.each$betaerr, result.each$gammaerr))
+    }
 }
