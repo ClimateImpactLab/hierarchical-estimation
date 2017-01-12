@@ -1,7 +1,7 @@
 ## This library supports logspec.R, and logspec.R must be loaded.
 
 ## Calculate the log likelihood, computing ADM1 sigmas from residuals
-calc.likeli.nosigma <- function(K, L, dmxxs, dmyy, zzs, mm, betas, gammas) {
+calc.likeli.nosigma <- function(K, L, dmxxs, dmyy, zzs, mm, betas, gammas, weights) {
     dmyy.exp <- calc.expected.demeaned(K, L, dmxxs, dmyy, zzs, mm, betas, gammas)
 
     sigmas <- c()
@@ -11,35 +11,35 @@ calc.likeli.nosigma <- function(K, L, dmxxs, dmyy, zzs, mm, betas, gammas) {
         sigmas <- c(sigmas, sd(residuals))
     }
 
-    calc.likeli.demeaned(K, L, dmxxs, dmyy, zzs, mm, betas, gammas, sigmas)
+    calc.likeli.demeaned(K, L, dmxxs, dmyy, zzs, mm, betas, gammas, sigmas, weights)
 }
 
-make.methast.betagamma.likeli <- function(K, L, dmxxs, dmyy, zzs, mm) {
+make.methast.betagamma.likeli <- function(K, L, dmxxs, dmyy, zzs, mm, weights) {
     function(param) {
         beta <- param[1:K]
         gamma <- param[(K+1):(K*K*L)]
-        calc.likeli.nosigma(K, L, dmxxs, dmyy, zzs, mm, beta, matrix(gamma, K, L))
+        calc.likeli.nosigma(K, L, dmxxs, dmyy, zzs, mm, beta, matrix(gamma, K, L), weights)
     }
 }
 
-methast.betagamma <- function(K, L, dmxxs, dmyy, zzs, mm, iter, beta0, gamma0, betaerr, gammaerr) {
+methast.betagamma <- function(K, L, dmxxs, dmyy, zzs, mm, iter, beta0, gamma0, betaerr, gammaerr, weights=1) {
     result <- methast(iter, c(beta0, gamma0), c(betaerr, gammaerr),
-                      make.methast.betagamma.likeli(K, L, dmxxs, dmyy, zzs, mm))
+                      make.methast.betagamma.likeli(K, L, dmxxs, dmyy, zzs, mm, weights))
 
     list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+K*L)], best.index=result$best.index)
 }
 
 ## Use Metropolis-Hastings with N seeds
-repeated.methast.betagamma <- function(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, beta0, gamma0, betaerr, gammaerr) {
+repeated.methast.betagamma <- function(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, beta0, gamma0, betaerr, gammaerr, weights=1) {
     result <- repeated.methast(seeds, iter, warmup,
                                c(beta0, gamma0), c(betaerr, gammaerr),
-                               make.methast.betagamma.likeli(K, L, dmxxs, dmyy, zzs, adm1))
+                               make.methast.betagamma.likeli(K, L, dmxxs, dmyy, zzs, adm1, weights))
 
     list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+K*L)], best.beta=result$best.param[1:K], best.gamma=as.matrix(result$best.param[(K+1):(K+K*L)], K, L))
 }
 
 ## Single Metropolis-Hastings with automatic tuning
-repeated.methast.each <- function(K, L, dmxxs, dmyy, zzs, mm, iter, warmup, seeds, beta0, gamma0, sigmas) {
+repeated.methast.each <- function(K, L, dmxxs, dmyy, zzs, mm, iter, warmup, seeds, beta0, gamma0, sigmas, weights=1) {
     betaerr <- c()
     for (kk in 1:length(beta0)) {
         result <- repeated.methast(seeds, iter, warmup, beta0[kk], 1,
@@ -47,7 +47,7 @@ repeated.methast.each <- function(K, L, dmxxs, dmyy, zzs, mm, iter, warmup, seed
                                        beta2 = beta0
                                        beta2[kk] <- beta
                                        calc.likeli.demeaned(K, L, dmxxs, dmyy, zzs, mm,
-                                                            beta2, gamma0, sigmas)
+                                                            beta2, gamma0, sigmas, weights)
                                    })
         betaerr <- c(betaerr, sd(result$params))
     }
@@ -60,7 +60,7 @@ repeated.methast.each <- function(K, L, dmxxs, dmyy, zzs, mm, iter, warmup, seed
                                            gamma2 = gamma0
                                            gamma2[kk, ll] <- gamma
                                            calc.likeli.demeaned(K, L, dmxxs, dmyy, zzs, mm,
-                                                                beta0, gamma2, sigmas)
+                                                                beta0, gamma2, sigmas, weights)
                                        })
             gammaerr <- c(gammaerr, sd(result$params))
 
@@ -71,11 +71,11 @@ repeated.methast.each <- function(K, L, dmxxs, dmyy, zzs, mm, iter, warmup, seed
     list(betaerr=betaerr, gammaerr=gammaerr)
 }
 
-calc.vcv.ols <- function(K, L, dmxxs, dmyy, zzs, adm1, betas, gammas, sigmas) {
+calc.vcv.ols <- function(K, L, dmxxs, dmyy, zzs, adm1, betas, gammas, sigmas, weights) {
     objective <- function(params) {
         betas <- params[1:K]
         gammas <- matrix(params[(K+1):((L+1)*K)], K, L)
-        -calc.likeli.demeaned(K, L, dmxxs, dmyy, zzs, adm1, betas, gammas, sigmas)
+        -calc.likeli.demeaned(K, L, dmxxs, dmyy, zzs, adm1, betas, gammas, sigmas, weights)
     }
 
     params <- c(betas, as.vector(gammas))
@@ -84,14 +84,14 @@ calc.vcv.ols <- function(K, L, dmxxs, dmyy, zzs, adm1, betas, gammas, sigmas) {
     solve(soln$hessian)
 }
 
-calc.vcv.methast <- function(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, sigmas) {
-    result <- repeated.methast.each(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, sigmas)
+calc.vcv.methast <- function(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, sigmas, weights=1) {
+    result <- repeated.methast.each(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, sigmas, weights=1)
 
-    vcv.bayes(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, result$betaerr, result$gammaerr)
+    vcv.bayes(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, result$betaerr, result$gammaerr, weights=1)
 }
 
-vcv.bayes <- function(K, L, dmxxs, dmyy, zzs, adm1, iters, warmup, seeds, beta0, gamma0, betaerr, gammaerr) {
-    result <- repeated.methast(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, beta0, gamm0, betaerr, gammaerr)
+vcv.bayes <- function(K, L, dmxxs, dmyy, zzs, adm1, iters, warmup, seeds, beta0, gamma0, betaerr, gammaerr, weights=1) {
+    result <- repeated.methast(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, beta0, gamm0, betaerr, gammaerr, weights=1)
 
     cov(cbind(result$betas, result$gammas))
 }
@@ -111,13 +111,13 @@ serr.conservative <- function(vcv.ols, params) {
     pmax(sd.ols, sd.bayes, sd.tails)
 }
 
-estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T) {
+estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T, weights=1) {
     list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
     list2env(demean.yxs(yy, xxs, adm2), parent.frame())
 
     if (use.ols) {
         vcv.start <- tryCatch({
-            calc.vcv.ols(K, L, dmxxs, dmyy, zzs, adm1, betas, gammas, sigmas)
+            calc.vcv.ols(K, L, dmxxs, dmyy, zzs, adm1, betas, gammas, sigmas, weights)
         }, error=function(e) {
             NULL
         })
@@ -129,11 +129,11 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=6
     if (use.ols) {
         se.start <- sqrt(diag(vcv.start))
     } else {
-        result.each <- repeated.methast.each(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, sigmas)
+        result.each <- repeated.methast.each(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, sigmas, weights=1)
         se.start <- c(result.each$betaerr, result.each$gammaerr)
     }
 
-    result <- repeated.methast.betagamma(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, se.start[1:K], matrix(se.start[(K+1):(K+K*L)], K, L))
+    result <- repeated.methast.betagamma(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, se.start[1:K], matrix(se.start[(K+1):(K+K*L)], K, L), weights=1)
     if (!use.ols)
         vcv.start <- cov(cbind(result$betas, result$gammas))
 
@@ -144,13 +144,13 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=6
         list(betas=result$best.beta, gammas=result$best.gamma, vcv=t(serr) %*% cor(cbind(result$betas, result$gammas)) %*% t(t(serr)), se=serr)
 }
 
-estimate.se <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T) {
+estimate.se <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T, weights=1) {
     list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
     list2env(demean.yxs(yy, xxs, adm2), parent.frame())
 
     if (use.ols) {
         vcv.start <- tryCatch({
-            calc.vcv.ols(K, L, dmxxs, dmyy, zzs, adm1, betas, gammas, sigmas)
+            calc.vcv.ols(K, L, dmxxs, dmyy, zzs, adm1, betas, gammas, sigmas, weights=1)
         }, error=function(e) {
             NULL
         })
@@ -162,7 +162,7 @@ estimate.se <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=60
     if (use.ols) {
         return(sqrt(diag(vcv.start)))
     } else {
-        result.each <- repeated.methast.each(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, sigmas)
+        result.each <- repeated.methast.each(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, sigmas, weights=1)
         return(c(result.each$betaerr, result.each$gammaerr))
     }
 }

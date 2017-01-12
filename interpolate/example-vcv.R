@@ -25,3 +25,10 @@ se.bayes <- estimate.vcv(result$betas, result$gammas, result$sigmas,
                        df[!duplicated(df$adm1), c('meant', 'log_gdppc', 'meant', 'log_gdppc',
                                                   'meant', 'log_gdppc', 'meant', 'log_gdppc')],
                        df$adm1, df$adm2, use.ols=F)$se
+
+## Apply weights
+se.ols <- estimate.vcv(result$betas, result$gammas, result$sigmas,
+                       df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
+                       df[!duplicated(df$adm1), c('meant', 'log_gdppc', 'meant', 'log_gdppc',
+                                                  'meant', 'log_gdppc', 'meant', 'log_gdppc')],
+                       df$adm1, df$adm2, use.ols=T, weights=rexp(nrow(df)))$se

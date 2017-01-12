@@ -13,6 +13,13 @@ result <- estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                                                       'meant', 'log_gdppc', 'meant', 'log_gdppc')],
                            df$adm1, df$adm2)
 
+## Apply weights
+estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
+                 df[!duplicated(df$adm1), c('meant', 'log_gdppc', 'meant', 'log_gdppc',
+                                            'meant', 'log_gdppc', 'meant', 'log_gdppc')],
+                 df$adm1, df$adm2, rexp(nrow(df)))
+
+
 ## Try to solve without hierarchy
 estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                  df[!duplicated(df$adm2), c('meant', 'log_gdppc', 'meant', 'log_gdppc',
@@ -35,3 +42,9 @@ estimate.logspec.optim(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                        df[!duplicated(df$adm2), c('meant', 'log_gdppc', 'meant', 'log_gdppc',
                                                   'meant', 'log_gdppc', 'meant', 'log_gdppc')],
                        df$adm2, df$adm2, initgammas=result$gammas)
+
+## Apply weights
+estimate.logspec.optim(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
+                       df[!duplicated(df$adm2), c('meant', 'log_gdppc', 'meant', 'log_gdppc',
+                                                  'meant', 'log_gdppc', 'meant', 'log_gdppc')],
+                       df$adm2, df$adm2, rexp(nrow(df)))
