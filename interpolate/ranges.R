@@ -141,7 +141,7 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=6
     if (sum(serr != se.start) == 0 && use.ols)
         list(betas=result$best.beta, gammas=result$best.gamma, vcv=vcv.start, se=se.start)
     else
-        list(betas=result$best.beta, gammas=result$best.gamma, vcv=t(serr) %*% cor(cbind(result$betas, result$gammas)) %*% t(t(serr)), se=serr)
+        list(betas=result$best.beta, gammas=result$best.gamma, vcv=diag(serr) %*% cor(cbind(result$betas, result$gammas)) %*% diag(serr), se=serr)
 }
 
 estimate.se <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T, weights=1) {
