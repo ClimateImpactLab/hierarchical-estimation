@@ -104,7 +104,7 @@ ses.tails <- function(params) {
 }
 
 serr.conservative <- function(vcv.ols, params) {
-    sd.ols <- sqrt(diag(vcv.ols))
+    sd.ols <- sqrt(abs(diag(vcv.ols))) # Can get small negative values
     sd.bayes <- apply(params, 2, sd)
     sd.tails <- ses.tails(params)
 
@@ -127,7 +127,7 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=6
     }
 
     if (use.ols) {
-        se.start <- sqrt(diag(vcv.start))
+        se.start <- sqrt(abs(diag(vcv.start))) # Can get small negative values
     } else {
         result.each <- repeated.methast.each(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, sigmas, weights=1)
         se.start <- c(result.each$betaerr, result.each$gammaerr)
@@ -141,7 +141,7 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=6
     if (sum(serr != se.start) == 0 && use.ols)
         list(betas=result$best.beta, gammas=result$best.gamma, vcv=vcv.start, se=se.start)
     else
-        list(betas=result$best.beta, gammas=result$best.gamma, vcv=t(serr) %*% cor(cbind(result$betas, result$gammas)) %*% t(t(serr)), se=serr)
+        list(betas=result$best.beta, gammas=result$best.gamma, vcv=diag(serr) %*% cor(cbind(result$betas, result$gammas)) %*% diag(serr), se=serr)
 }
 
 estimate.se <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T, weights=1) {
@@ -160,7 +160,7 @@ estimate.se <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=60
     }
 
     if (use.ols) {
-        return(sqrt(diag(vcv.start)))
+        return(sqrt(abs(diag(vcv.start)))) # Can get small negative values
     } else {
         result.each <- repeated.methast.each(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, betas, gammas, sigmas, weights=1)
         return(c(result.each$betaerr, result.each$gammaerr))
