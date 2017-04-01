@@ -91,7 +91,7 @@ calc.vcv.methast <- function(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, 
 }
 
 vcv.bayes <- function(K, L, dmxxs, dmyy, zzs, adm1, iters, warmup, seeds, beta0, gamma0, betaerr, gammaerr, weights=1) {
-    result <- repeated.methast(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, beta0, gamm0, betaerr, gammaerr, weights=1)
+    result <- repeated.methast(K, L, dmxxs, dmyy, zzs, adm1, iter, warmup, seeds, beta0, gamma0, betaerr, gammaerr, weights=1)
 
     cov(cbind(result$betas, result$gammas))
 }

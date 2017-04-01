@@ -1,6 +1,7 @@
 library(nnls)
 library(RcppArmadillo)
 
+## Calculate the expected value, after it has been demeaned
 calc.expected.demeaned <- function(K, L, dmxxs, dmyy, zzs, mm, betas, gammas) {
     obsmean <- 0
     for (kk in 1:K)
@@ -9,11 +10,13 @@ calc.expected.demeaned <- function(K, L, dmxxs, dmyy, zzs, mm, betas, gammas) {
     obsmean
 }
 
+## Calculate the likelihood of the given parameters, after observations have been demeaned
 calc.likeli.demeaned <- function(K, L, dmxxs, dmyy, zzs, mm, betas, gammas, sigma, weights) {
     obsmean <- calc.expected.demeaned(K, L, dmxxs, dmyy, zzs, mm, betas, gammas)
     sum(weights * dnorm(dmyy, obsmean, sigma[mm], log=T))
 }
 
+## Demean a set of values by region (partial out region fixed effects)
 regional.demean <- function(values, regions) {
     for (region in unique(regions)) {
         regioniis <- which(regions == region)
@@ -23,6 +26,7 @@ regional.demean <- function(values, regions) {
     values
 }
 
+## Check that all of the given arguments are correctly specified
 check.arguments <- function(yy, xxs, zzs, adm1, adm2) {
     if (is.null(nrow(xxs)) || is.null(ncol(xxs)))
         stop("xxs must be a matrix or data.frame.")
@@ -50,6 +54,7 @@ check.arguments <- function(yy, xxs, zzs, adm1, adm2) {
     return(list(K=K, L=L, N=N, M=M))
 }
 
+## Demean all observations by ADM2 regions (partial out ADM2 fixed effects)
 demean.yxs <- function(yy, xxs, adm2) {
     ## De-mean observations
     dmyy <- regional.demean(yy, adm2)
@@ -60,6 +65,7 @@ demean.yxs <- function(yy, xxs, adm2) {
     list(dmyy=dmyy, dmxxs=dmxxs)
 }
 
+## Estimate the parameters of the log specification
 estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, weights=1, maxiter=1000, initgammas=NULL) {
     list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
     list2env(demean.yxs(yy, xxs, adm2), parent.frame())
