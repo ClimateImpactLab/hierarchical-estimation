@@ -1,0 +1,17 @@
+Package: hierarchical-estimation
+Version: 0.1
+Date: 2017-04-01
+Title: Hierarchical Estimation
+Authors@R: c(person("James", "Rising", role = c("aut", "cre"),
+                     email = "jrising@berkeley.edu"))
+Author: James Rising [aut, cre]
+Maintainer: James Rising <jrising@berkeley.edu>
+Depends:
+  R (>= 3.1.0)
+  nnls
+  RcppArmadillo
+Suggests: texreg, rstan, reshape2, ggplot2, lfe, readstata13
+Description: Estimates the models with observations at a higher
+  administrative level and covariates at a lower covariate level.
+License: GPL (>= 2)
+URL: https://climateimpactlab.github.io/
