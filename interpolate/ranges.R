@@ -112,8 +112,8 @@ serr.conservative <- function(vcv.ols, params) {
 }
 
 estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T, weights=1) {
-    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
-    list2env(demean.yxs(yy, xxs, adm2), parent.frame())
+    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2), environment())
 
     if (use.ols) {
         vcv.start <- tryCatch({
@@ -145,8 +145,8 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=6
 }
 
 estimate.se <- function(betas, gammas, sigmas, yy, xxs, zzs, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T, weights=1) {
-    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
-    list2env(demean.yxs(yy, xxs, adm2), parent.frame())
+    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2), environment())
 
     if (use.ols) {
         vcv.start <- tryCatch({
