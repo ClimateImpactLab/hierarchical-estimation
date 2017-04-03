@@ -55,7 +55,7 @@ check.arguments <- function(yy, xxs, zzs, adm1, adm2) {
 }
 
 ## Demean all observations by ADM2 regions (partial out ADM2 fixed effects)
-demean.yxs <- function(yy, xxs, adm2) {
+demean.yxs <- function(K, yy, xxs, adm2) {
     ## De-mean observations
     dmyy <- regional.demean(yy, adm2)
     dmxxs <- xxs
@@ -67,8 +67,8 @@ demean.yxs <- function(yy, xxs, adm2) {
 
 ## Estimate the parameters of the log specification
 estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, weights=1, maxiter=1000, initgammas=NULL) {
-    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
-    list2env(demean.yxs(yy, xxs, adm2), parent.frame())
+    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2), environment())
     dmxxs.orig <- dmxxs
 
     print("Iterating...")
@@ -185,7 +185,7 @@ estimate.logspec <- function(yy, xxs, zzs, adm1, adm2, weights=1, maxiter=1000, 
     list(betas=betas, gammas=gammas, sigmas=stage1.sigma)
 }
 
-stacked.regression <- function(L, gammas, dmyy, dmxxs.orig, zzs, mm, weights) {
+stacked.regression <- function(K, L, gammas, dmyy, dmxxs.orig, zzs, mm, weights) {
     dmxxs <- dmxxs.orig
     for (kk in 1:K)
         dmxxs[, kk] <- dmxxs[, kk] * exp(as.matrix(zzs[, ((kk-1)*L + 1):(kk*L)]) %*% gammas[kk, ])[mm] * sqrt(weights)
@@ -194,15 +194,15 @@ stacked.regression <- function(L, gammas, dmyy, dmxxs.orig, zzs, mm, weights) {
 }
 
 ## Get stacked betas
-stacked.betas <- function(L, gammas, dmyy, dmxxs.orig, zzs, mm, weights) {
-    stacked <- stacked.regression(L, gammas, dmyy, dmxxs.orig, zzs, mm, weights)
+stacked.betas <- function(K, L, gammas, dmyy, dmxxs.orig, zzs, mm, weights) {
+    stacked <- stacked.regression(K, L, gammas, dmyy, dmxxs.orig, zzs, mm, weights)
 
     stacked$coeff
 }
 
 estimate.logspec.optim <- function(yy, xxs, zzs, adm1, adm2, weights=1, initgammas=NULL) {
-    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
-    list2env(demean.yxs(yy, xxs, adm2), parent.frame())
+    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2), environment())
     dmxxs.orig <- dmxxs
 
     if (is.null(initgammas)) {
@@ -216,7 +216,7 @@ estimate.logspec.optim <- function(yy, xxs, zzs, adm1, adm2, weights=1, initgamm
         gammas <- matrix(0, K, L)
     } else {
         gammas <- initgammas
-        stacked <- stacked.regression(L, gammas, dmyy, dmxxs.orig, zzs, adm1, weights)
+        stacked <- stacked.regression(K, L, gammas, dmyy, dmxxs.orig, zzs, adm1, weights)
         betas <- stacked$coeff
         sigma <- sd(stacked$residuals)
     }
@@ -228,7 +228,7 @@ estimate.logspec.optim <- function(yy, xxs, zzs, adm1, adm2, weights=1, initgamm
         gammas <- matrix(params[1:(L*K)], K, L)
         sigma <- rep(params[L*K+1], M)
 
-        betas <- stacked.betas(L, gammas, dmyy, dmxxs.orig, zzs, adm1, weights)
+        betas <- stacked.betas(K, L, gammas, dmyy, dmxxs.orig, zzs, adm1, weights)
 
         -calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, sigma, weights)
     }
@@ -239,7 +239,7 @@ estimate.logspec.optim <- function(yy, xxs, zzs, adm1, adm2, weights=1, initgamm
     gammas <- matrix(soln$par[1:(L*K)], K, L)
     sigma <- soln$par[L*K+1]
 
-    betas <- stacked.betas(L, gammas, dmyy, dmxxs.orig, zzs, adm1, weights)
+    betas <- stacked.betas(K, L, gammas, dmyy, dmxxs.orig, zzs, adm1, weights)
 
     print(c("Step 2:", calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, rep(sigma, M), weights)))
 
@@ -261,7 +261,7 @@ estimate.logspec.optim <- function(yy, xxs, zzs, adm1, adm2, weights=1, initgamm
         gammas <- matrix(params[1:(L*K)], K, L)
         sigma <- params[(L*K+1):length(params)]
 
-        betas <- stacked.betas(L, gammas, dmyy, dmxxs.orig, zzs, adm1, weights)
+        betas <- stacked.betas(K, L, gammas, dmyy, dmxxs.orig, zzs, adm1, weights)
 
         -calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, sigma, weights)
     }
@@ -272,7 +272,7 @@ estimate.logspec.optim <- function(yy, xxs, zzs, adm1, adm2, weights=1, initgamm
     gammas <- matrix(soln$par[1:(L*K)], K, L)
     sigma <- soln$par[(L*K+1):length(soln$par)]
 
-    betas <- stacked.betas(L, gammas, dmyy, dmxxs.orig, zzs, adm1, weights)
+    betas <- stacked.betas(K, L, gammas, dmyy, dmxxs.orig, zzs, adm1, weights)
 
     print(c("Step 4:", calc.likeli.demeaned(K, L, dmxxs.orig, dmyy, zzs, adm1, betas, gammas, sigma, weights)))
 

@@ -1,3 +1,5 @@
 language: r
 cache: packages
 sudo: false
+
+script: Rscript test/test.R
