@@ -7,6 +7,10 @@ ta.arguments <- function(df, outname, adm1name, adm2name, prednames, covarnames)
 
     unipreds <- unique(prednames)
     unicovars <- unique(covarnames)
+    if (!('1' %in% unicovars))
+        stop("One of the covariates must be '1' for each predictor.")
+    unicovars <- unicovars[unicovars != '1'] # Drop this covariate
+
     xxs <- df[, unipreds]
 
     ## Generate an order across representative rows
@@ -24,13 +28,14 @@ ta.arguments <- function(df, outname, adm1name, adm2name, prednames, covarnames)
     list(yy=yy, adm1=adm1, adm2=adm2, xxs=xxs, zzs=zzs, kls=kls)
 }
 
+## Wrapper on estimate.logspec
 ta.estimate.logspec <- function(df, outname, adm1name, adm2name, prednames, covarnames, weights=1) {
     list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
     result <- estimate.logspec(yy, xxs, zzs, kls, adm1, adm2, weights=weights)
-    print(result)
     estimate.logspec.optim(yy, xxs, zzs, kls, adm1, adm2, weights=weights, initgammas=result$gammas)
 }
 
+## Wrapper on estimate.vcv
 ta.estimate.vcv <- function(betas, gammas, sigmas, df, outname, adm1name, adm2name, prednames, covarnames, ...) {
     list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
     estimate.vcv(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, adm2, ...)
