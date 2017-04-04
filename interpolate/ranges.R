@@ -1,8 +1,8 @@
 ## This library supports logspec.R, and logspec.R must be loaded.
 
 ## Calculate the log likelihood, computing ADM1 sigmas from residuals
-calc.likeli.nosigma <- function(K, L, dmxxs, dmyy, zzs, kls, mm, betas, gammas, weights) {
-    dmyy.exp <- calc.expected.demeaned(K, L, dmxxs, dmyy, zzs, kls, mm, betas, gammas)
+calc.likeli.nosigma <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, weights) {
+    dmyy.exp <- calc.expected.demeaned(dmxxs, dmyy, zzs, kls, mm, betas, gammas)
 
     sigmas <- c()
     for (jj in unique(mm)) {
@@ -11,14 +11,14 @@ calc.likeli.nosigma <- function(K, L, dmxxs, dmyy, zzs, kls, mm, betas, gammas, 
         sigmas <- c(sigmas, sd(residuals))
     }
 
-    calc.likeli.demeaned(K, L, dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigmas, weights)
+    calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigmas, weights)
 }
 
 make.methast.betagamma.likeli <- function(K, L, dmxxs, dmyy, zzs, kls, mm, weights) {
     function(param) {
         beta <- param[1:K]
-        gamma <- param[(K+1):(K*K*L)]
-        calc.likeli.nosigma(K, L, dmxxs, dmyy, zzs, kls, mm, beta, gamma, weights)
+        gamma <- param[(K+1):(K+sum(kls))]
+        calc.likeli.nosigma(dmxxs, dmyy, zzs, kls, mm, beta, gamma, weights)
     }
 }
 
@@ -46,7 +46,7 @@ repeated.methast.each <- function(K, L, dmxxs, dmyy, zzs, kls, mm, iter, warmup,
                                    function(beta) {
                                        beta2 = beta0
                                        beta2[kk] <- beta
-                                       calc.likeli.demeaned(K, L, dmxxs, dmyy, zzs, kls, mm,
+                                       calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, mm,
                                                             beta2, gamma0, sigmas, weights)
                                    })
         betaerr <- c(betaerr, sd(result$params))
@@ -59,7 +59,7 @@ repeated.methast.each <- function(K, L, dmxxs, dmyy, zzs, kls, mm, iter, warmup,
                                        function(gamma) {
                                            gamma2 = gamma0
                                            gamma2[kk, ll] <- gamma
-                                           calc.likeli.demeaned(K, L, dmxxs, dmyy, zzs, kls, mm,
+                                           calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, mm,
                                                                 beta0, gamma2, sigmas, weights)
                                        })
             gammaerr <- c(gammaerr, sd(result$params))
@@ -74,7 +74,7 @@ calc.vcv.ols <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigma
     objective <- function(params) {
         betas <- params[1:K]
         gammas <- params[(K+1):(K+sum(kls))]
-        -calc.likeli.demeaned(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights)
+        -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights)
     }
 
     params <- c(betas, gammas)
