@@ -53,18 +53,15 @@ repeated.methast.each <- function(K, L, dmxxs, dmyy, zzs, kls, mm, iter, warmup,
     }
 
     gammaerr <- c()
-    for (kk in 1:dim(gamma0)[1]) {
-        for (ll in 1:dim(gamma0)[2]) {
-            result <- repeated.methast(seeds, iter, warmup, gamma0[kk, ll], 1,
-                                       function(gamma) {
-                                           gamma2 = gamma0
-                                           gamma2[kk, ll] <- gamma
-                                           calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, mm,
-                                                                beta0, gamma2, sigmas, weights)
-                                       })
-            gammaerr <- c(gammaerr, sd(result$params))
-
-        }
+    for (kl in 1:length(gamma0)) {
+        result <- repeated.methast(seeds, iter, warmup, gamma0[kl], 1,
+                                   function(gamma) {
+                                       gamma2 = gamma0
+                                       gamma2[kl] <- gamma
+                                       calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, mm,
+                                                            beta0, gamma2, sigmas, weights)
+                                   })
+        gammaerr <- c(gammaerr, sd(result$params))
     }
 
     list(betaerr=betaerr, gammaerr=gammaerr)

@@ -39,7 +39,6 @@ test.ta.estimate.vcv <- function() {
                                     'bin4', 'bin4', 'bin4', 'bin5', 'bin5', 'bin5'),
                                   c('1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc',
                                     '1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc'))
-)
 
     ta.estimate.vcv(result$betas, result$gamma, result$sigma,
                     df, 'rate', 'adm1', 'adm2',
