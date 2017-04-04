@@ -12,7 +12,8 @@ test.ta.estimate.logspec <- function() {
 
     ## Find the coefficients
     result <- ta.estimate.logspec(df, 'rate', 'adm1', 'adm2',
-                                  c('bin1', 'bin1', 'bin2', 'bin2', 'bin4', 'bin4', 'bin5', 'bin5'),
+                                  c('bin1', 'bin1', 'bin1', 'bin2', 'bin2', 'bin2',
+                                    'bin4', 'bin4', 'bin4', 'bin5', 'bin5', 'bin5'),
                                   c('1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc',
                                     '1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc'))
     print(result)
@@ -34,14 +35,16 @@ test.ta.estimate.vcv <- function() {
     df$log_gdppc <- log(df$gdppc)
 
     result <- ta.estimate.logspec(df, 'rate', 'adm1', 'adm2',
-                                  c('bin1', 'bin1', 'bin2', 'bin2', 'bin4', 'bin4', 'bin5', 'bin5'),
+                                  c('bin1', 'bin1', 'bin1', 'bin2', 'bin2', 'bin2',
+                                    'bin4', 'bin4', 'bin4', 'bin5', 'bin5', 'bin5'),
                                   c('1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc',
                                     '1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc'))
 )
 
     ta.estimate.vcv(result$betas, result$gamma, result$sigma,
                     df, 'rate', 'adm1', 'adm2',
-                    c('bin1', 'bin1', 'bin2', 'bin2', 'bin4', 'bin4', 'bin5', 'bin5'),
+                    c('bin1', 'bin1', 'bin1', 'bin2', 'bin2', 'bin2',
+                      'bin4', 'bin4', 'bin4', 'bin5', 'bin5', 'bin5'),
                     c('1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc',
                       '1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc'))
 }

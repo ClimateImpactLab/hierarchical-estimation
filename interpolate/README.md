@@ -57,6 +57,14 @@ covarnames`, as defined below:
  - `df`: A data.frame with all of the relevant information.
  - `outname`: A string for the name of the column describing the outcome variable.
  - `adm1name` and `adm2name`: String for the names of the columns defining the ADM1 and ADM2 regions.
- - `prednames`: The names of the columns for the predictors.  Each predictor name is repeated as many times as the covariates it has.
+ - `prednames`: The names of the columns for the predictors.  Each predictor name is repeated as many times as the covariates it has, plus 1 for an intercept covariate.
+ - `covarnames`: The names of the columns for the covariates.  This should have as many entries as the `prednames` vector, where the corresponding entry for a given predictor should be one of its covariates.  Each predictor should have an entry for the covariate '1'.
 
-See an EXAMPLE
+For example, the 5-bin example is called as follows:
+```
+ta.estimate.logspec(df, 'rate', 'adm1', 'adm2',
+                    c('bin1', 'bin1', 'bin1', 'bin2', 'bin2', 'bin2',
+                      'bin4', 'bin4', 'bin4', 'bin5', 'bin5', 'bin5'),
+                    c('1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc',
+                      '1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc'))
+```
