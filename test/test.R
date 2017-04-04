@@ -8,3 +8,5 @@ testsuite.interpolate <- defineTestSuite("interpolate",
                                          rngNormalKind = "Kinderman-Ramage")
 
 testResult <- runTestSuite(testsuite.interpolate)
+
+printTextProtocol(testResult, showDetails = TRUE)
