@@ -35,8 +35,8 @@ test.estimate.logspec <- function() {
 
     ## ## Try to solve without hierarchy
     ## estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
-    ##                  df[!duplicated(df$adm1), c('meant', 'log_gdppc')],
-    ##                         matrix(T, 4, 2), df$adm2, df$adm2)
+    ##                  df[!duplicated(df$adm2), c('meant', 'log_gdppc')],
+    ##                  matrix(T, 4, 2), df$adm2, df$adm2)
 
     ## ## A cautionary tale: I get the right answer if I provide starting point
     ## estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
