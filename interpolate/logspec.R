@@ -128,7 +128,7 @@ estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1
         betas <- stacked$coeff
 
         ## Check the performance of this stacked set of betas
-        adm1.sigma <- rep(NA, M) # Use same variable as stage1-2, in case we exit here
+        adm1.sigma <- rep(NA, M)
         for (jj in 1:M) {
             included <- adm1 == jj
             adm1.sigma[jj] <- mean(sd(stacked$residuals[included]) * dmyy[included] / dmyy.weighted[included])
@@ -154,17 +154,17 @@ estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1
 
         ## Perform a regression on each state
         stage1.betas <- matrix(NA, M, K)
-        stage1.sigma <- rep(NA, M)
         for (jj in 1:M) {
             included <- adm1 == jj
+            if (sum(included) < K + 1)
+                next
+
             dmxxsjj <- as.matrix(dmxxs[included,])
             modjj <- nnnpls(dmxxsjj, dmyy[included], stacked$coeff)
 
             ## Multiply back in exponent, if dmbins were generated with an assumed gamma
             for (kk in 1:K)
                 stage1.betas[jj, kk] <- modjj$x[kk] * mean(dmxxsjj[, kk] / dmxxs.orig[included, kk], na.rm=T)
-
-            stage1.sigma[jj] <- sd(modjj$residuals) # NOTE: residual standard error is not quite this
         }
 
         ## Prepare values for second stage regressions
