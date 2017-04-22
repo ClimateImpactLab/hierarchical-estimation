@@ -101,7 +101,10 @@ estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1
 
     bestlikeli <- -Inf # best likelihood we've seen
     bestgammas <- rep(0, sum(kls)) # gammas corresponding to bestlikeli
+    bestbetas <- rep(0, K) # betas corresponding to bestlikeli
+    bestsigmas <- rep(Inf, M) # adm1.sigma corresponding to bestlikeli
     armijo.factor <- 1 # the amount of movement away from bestgammas
+    bestgravity <- F # should we move toward best this iteration
 
     ## Start with no covariate effects
     dmxxs <- dmxxs.orig
@@ -125,13 +128,18 @@ estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1
         betas <- stacked$coeff
 
         ## Check the performance of this stacked set of betas
-        stage1.sigma <- rep(NA, M) # Use same variable as stage1-2, in case we exit here
+        adm1.sigma <- rep(NA, M)
         for (jj in 1:M) {
             included <- adm1 == jj
-            stage1.sigma[jj] <- mean(sd(stacked$residuals) * dmyy[included] / dmyy.weighted[included])
+            adm1.sigma[jj] <- mean(sd(stacked$residuals[included]) * dmyy[included] / dmyy.weighted[included])
         }
 
-        likeli1 <- calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, stage1.sigma, weights)
+        if (bestgravity) {
+            betas <- (bestbetas + armijo.factor * betas) / (1 + armijo.factor)
+            adm1.sigma <- (bestsigmas + armijo.factor * adm1.sigma) / (1 + armijo.factor)
+        }
+
+        likeli1 <- calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, adm1.sigma, weights)
 
         ## Check if we have converged
         if (abs(likeli1 - bestlikeli) < 1e-6 || armijo.factor < 1e-6)
@@ -139,22 +147,24 @@ estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1
 
         if (likeli1 > bestlikeli) {
             bestlikeli <- likeli1
+            bestbetas <- betas
             bestgammas <- gammas
+            bestsigmas <- adm1.sigma
         }
 
         ## Perform a regression on each state
         stage1.betas <- matrix(NA, M, K)
-        stage1.sigma <- rep(NA, M)
         for (jj in 1:M) {
             included <- adm1 == jj
+            if (sum(included) < K + 1)
+                next
+
             dmxxsjj <- as.matrix(dmxxs[included,])
             modjj <- nnnpls(dmxxsjj, dmyy[included], stacked$coeff)
 
             ## Multiply back in exponent, if dmbins were generated with an assumed gamma
             for (kk in 1:K)
                 stage1.betas[jj, kk] <- modjj$x[kk] * mean(dmxxsjj[, kk] / dmxxs.orig[included, kk], na.rm=T)
-
-            stage1.sigma[jj] <- sd(modjj$residuals) # NOTE: residual standard error is not quite this
         }
 
         ## Prepare values for second stage regressions
@@ -181,7 +191,7 @@ estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1
             gammas.so.far <- gammas.so.far + gammas.here
         }
 
-        likeli2 <- calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, stage1.sigma, weights)
+        likeli2 <- calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, adm1.sigma, weights)
 
         ## Report progress
         print(c(iter, log2(1/armijo.factor), as.integer(max(likeli1, likeli2))))
@@ -192,19 +202,26 @@ estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1
 
         if (likeli2 > bestlikeli) {
             bestlikeli <- likeli2
+            bestbetas <- betas
             bestgammas <- gammas
-        } else {
-            ## Oops!  We spun too far out
-            gammas <- (bestgammas + armijo.factor * gammas) / (1 + armijo.factor)
-            armijo.factor <- armijo.factor / 2
-            ## Note: We may never achive as good a likelihood, since it may be inconsistent with the sigmas from stage1
+            bestsigmas <- adm1.sigma
         }
 
+        if (max(likeli1, likeli2) < bestlikeli) {
+            ## Oops!  We spun too far out
+            gammas <- (bestgammas + armijo.factor * gammas) / (1 + armijo.factor)
+            bestgravity <- T # Can't do beta and sigma calc yet, so leave to next iteration
+            armijo.factor <- armijo.factor / 2
+            ## Note: We may never achive as good a likelihood, since it may be inconsistent with the sigmas from stage1
+        } else
+            bestgravity <- F
+
+        ## Setup for next iteration
         dmxxs <- calc.covariated.predictors(dmxxs.orig, zzs, kls, adm1, gammas)
         for (jj in 1:M) {
             included <- adm1 == jj
-            dmyy.weighted[included] <- dmyy[included] / stage1.sigma[jj]
-            dmxxs.weighted[included,] <- dmxxs[included,] / stage1.sigma[jj]
+            dmyy.weighted[included] <- dmyy[included] / adm1.sigma[jj]
+            dmxxs.weighted[included,] <- dmxxs[included,] / adm1.sigma[jj]
         }
 
         dmyy.weighted <- dmyy.weighted * sqrt(weights)
@@ -212,7 +229,7 @@ estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1
             dmxxs.weighted[, kk] <- dmxxs.weighted[, kk] * sqrt(weights)
     }
 
-    list(betas=betas, gammas=gammas, sigmas=stage1.sigma)
+    list(betas=betas, gammas=gammas, sigmas=adm1.sigma)
 }
 
 ## Perform a weighted regression with partialed-out predictors dmxxs
