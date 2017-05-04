@@ -1,0 +1,923 @@
+yage.int <- predict(smooth.spline(yage.age, yage.bar, w=yage.weight, df=length(yage.age) - 5), 1:100)$y#
+yage.int[1:2] = 0#
+#
+ggplot(data.frame(year=1:100, yield=yage.int), aes(x=year, y=yield)) +#
+    geom_line() +#
+    geom_errorbarh(data=data.frame(yage.age, yage.spanlo, yage.spanhi, yage.bar),#
+                   aes(x=yage.age, xmin=yage.spanlo, xmax=yage.spanhi, y=yage.bar), colour=2) +#
+    theme_bw() + ylab("Yield (kg / Ha)") + xlab("Plant age") + scale_x_continuous(expand=c(.01, 0))
+yage.int <- predict(smooth.spline(yage.age, yage.bar, w=yage.weight, df=length(yage.age) - 5), 1:100)$y#
+yage.int[1:2] = 0#
+#
+ggplot(data.frame(year=1:100, yield=yage.int), aes(x=year, y=yield)) +#
+    geom_line() +#
+    #geom_errorbarh(data=data.frame(yage.age, yage.spanlo, yage.spanhi, yage.bar),#
+    #               aes(x=yage.age, xmin=yage.spanlo, xmax=yage.spanhi, y=yage.bar), colour=2) +#
+    theme_bw() + ylab("Yield (kg / Ha)") + xlab("Plant age") + scale_x_continuous(expand=c(.01, 0))
+yage.int <- predict(smooth.spline(yage.age, yage.bar, w=yage.weight, df=length(yage.age) - 7), 1:100)$y#
+yage.int[1:2] = 0#
+#
+ggplot(data.frame(year=1:100, yield=yage.int), aes(x=year, y=yield)) +#
+    geom_line() +#
+    #geom_errorbarh(data=data.frame(yage.age, yage.spanlo, yage.spanhi, yage.bar),#
+    #               aes(x=yage.age, xmin=yage.spanlo, xmax=yage.spanhi, y=yage.bar), colour=2) +#
+    theme_bw() + ylab("Yield (kg / Ha)") + xlab("Plant age") + scale_x_continuous(expand=c(.01, 0))
+yage.int <- predict(smooth.spline(yage.age, yage.bar, w=yage.weight, df=length(yage.age) - 3), 1:100)$y#
+yage.int[1:2] = 0#
+#
+ggplot(data.frame(year=1:100, yield=yage.int), aes(x=year, y=yield)) +#
+    geom_line() +#
+    #geom_errorbarh(data=data.frame(yage.age, yage.spanlo, yage.spanhi, yage.bar),#
+    #               aes(x=yage.age, xmin=yage.spanlo, xmax=yage.spanhi, y=yage.bar), colour=2) +#
+    theme_bw() + ylab("Yield (kg / Ha)") + xlab("Plant age") + scale_x_continuous(expand=c(.01, 0))
+yage.int <- predict(smooth.spline(yage.age, yage.bar, w=yage.weight, df=length(yage.age) - 6), 1:100)$y#
+yage.int[1:2] = 0#
+#
+ggplot(data.frame(year=1:100, yield=yage.int), aes(x=year, y=yield)) +#
+    geom_line() +#
+    #geom_errorbarh(data=data.frame(yage.age, yage.spanlo, yage.spanhi, yage.bar),#
+    #               aes(x=yage.age, xmin=yage.spanlo, xmax=yage.spanhi, y=yage.bar), colour=2) +#
+    theme_bw() + ylab("Yield (kg / Ha)") + xlab("Plant age") + scale_x_continuous(expand=c(.01, 0))
+yage.int <- predict(smooth.spline(yage.age, yage.bar, w=yage.weight, df=length(yage.age) - 5), 1:100)$y#
+yage.int[1:2] = 0#
+#
+ggplot(data.frame(year=1:100, yield=yage.int), aes(x=year, y=yield)) +#
+    geom_line() +#
+    #geom_errorbarh(data=data.frame(yage.age, yage.spanlo, yage.spanhi, yage.bar),#
+    #               aes(x=yage.age, xmin=yage.spanlo, xmax=yage.spanhi, y=yage.bar), colour=2) +#
+    theme_bw() + ylab("Yield (kg / Ha)") + xlab("Plant age") + scale_x_continuous(expand=c(.01, 0))
+yage.int <- predict(smooth.spline(yage.age, yage.bar, w=yage.weight, df=length(yage.age) - 5), 1:100)$y#
+yage.int[1:2] = 0#
+#
+ggplot(data.frame(year=1:100, yield=yage.int), aes(x=year, y=yield)) +#
+    geom_line() +#
+    geom_errorbarh(data=data.frame(yage.age, yage.spanlo, yage.spanhi, yage.bar),#
+                   aes(x=yage.age, xmin=yage.spanlo, xmax=yage.spanhi, y=yage.bar), colour=2) +#
+    theme_bw() + ylab("Yield (kg / Ha)") + xlab("Plant age") + scale_x_continuous(expand=c(.01, 0))
+yage.spanlo <- c(3, 4, 7, 10, 13, 16, 21, 26, 31, 36, 41, 46, 51, 61, 71, 81) - 1#
+yage.spanhi <- c(3, 6, 9, 12, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 100)
+ggplot(data.frame(year=1:100, yield=yage.int), aes(x=year, y=yield)) +#
+    geom_line() +#
+    geom_errorbarh(data=data.frame(yage.age[2:length(yage.age)], yage.spanlo, yage.spanhi, yage.bar[2:length(yage.age)]),#
+                   aes(x=yage.age, xmin=yage.spanlo, xmax=yage.spanhi, y=yage.bar), colour=2) +#
+    theme_bw() + ylab("Yield (kg / Ha)") + xlab("Plant age") + scale_x_continuous(expand=c(.01, 0))
+ggplot(data.frame(year=1:100, yield=yage.int), aes(x=year, y=yield)) +#
+    geom_line() +#
+    geom_errorbarh(data=data.frame(yage.age[3:length(yage.age)], yage.spanlo, yage.spanhi, yage.bar[3:length(yage.age)]),#
+                   aes(x=yage.age, xmin=yage.spanlo, xmax=yage.spanhi, y=yage.bar), colour=2) +#
+    theme_bw() + ylab("Yield (kg / Ha)") + xlab("Plant age") + scale_x_continuous(expand=c(.01, 0))
+data.frame(yage.age[3:length(yage.age)], yage.spanlo, yage.spanhi, yage.bar[3:length(yage.age)])
+ggplot(data.frame(year=1:100, yield=yage.int), aes(x=year, y=yield)) +#
+    geom_line() +#
+    geom_errorbarh(data=data.frame(yage.age=yage.age[3:length(yage.age)], yage.spanlo, yage.spanhi, yage.bar=yage.bar[3:length(yage.age)]),#
+                   aes(x=yage.age, xmin=yage.spanlo, xmax=yage.spanhi, y=yage.bar), colour=2) +#
+    theme_bw() + ylab("Yield (kg / Ha)") + xlab("Plant age") + scale_x_continuous(expand=c(.01, 0))
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-1.csv")
+xx
+image(xx)
+image(as.matrix(xx))
+?image
+matplot(as.matrix(xx))
+myImagePlot <- function(x, ...){#
+     min <- min(x)#
+     max <- max(x)#
+     yLabels <- rownames(x)#
+     xLabels <- colnames(x)#
+     title <-c()#
+  # check for additional function arguments#
+  if( length(list(...)) ){#
+    Lst <- list(...)#
+    if( !is.null(Lst$zlim) ){#
+       min <- Lst$zlim[1]#
+       max <- Lst$zlim[2]#
+    }#
+    if( !is.null(Lst$yLabels) ){#
+       yLabels <- c(Lst$yLabels)#
+    }#
+    if( !is.null(Lst$xLabels) ){#
+       xLabels <- c(Lst$xLabels)#
+    }#
+    if( !is.null(Lst$title) ){#
+       title <- Lst$title#
+    }#
+  }#
+# check for null values#
+if( is.null(xLabels) ){#
+   xLabels <- c(1:ncol(x))#
+}#
+if( is.null(yLabels) ){#
+   yLabels <- c(1:nrow(x))#
+}#
+#
+layout(matrix(data=c(1,2), nrow=1, ncol=2), widths=c(4,1), heights=c(1,1))#
+#
+ # Red and green range from 0 to 1 while Blue ranges from 1 to 0#
+ ColorRamp <- rgb( seq(0,1,length=256),  # Red#
+                   seq(0,1,length=256),  # Green#
+                   seq(1,0,length=256))  # Blue#
+ ColorLevels <- seq(min, max, length=length(ColorRamp))#
+#
+ # Reverse Y axis#
+ reverse <- nrow(x) : 1#
+ yLabels <- yLabels[reverse]#
+ x <- x[reverse,]#
+#
+ # Data Map#
+ par(mar = c(3,5,2.5,2))#
+ image(1:length(xLabels), 1:length(yLabels), t(x), col=ColorRamp, xlab="",#
+ ylab="", axes=FALSE, zlim=c(min,max))#
+ if( !is.null(title) ){#
+    title(main=title)#
+ }#
+axis(BELOW<-1, at=1:length(xLabels), labels=xLabels, cex.axis=0.7)#
+ axis(LEFT <-2, at=1:length(yLabels), labels=yLabels, las= HORIZONTAL<-1,#
+ cex.axis=0.7)#
+#
+ # Color Scale#
+ par(mar = c(3,2.5,2.5,2))#
+ image(1, ColorLevels,#
+      matrix(data=ColorLevels, ncol=length(ColorLevels),nrow=1),#
+      col=ColorRamp,#
+      xlab="",ylab="",#
+      xaxt="n")#
+#
+ layout(1)#
+}
+myImagePlot(as.matrix(xx))
+xx[!is.finite(xx)] = nan
+xx[!is.finite(xx)] = na
+xx[!is.finite(xx)] = NA
+xx
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = NA
+myImagePlot(yy)
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = 0
+myImagePlot(yy)
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-1.csv")
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = 0
+myImagePlot(yy)
+image(yy)
+yy[1,1]
+yy[100,100]
+dim(yy)
+yy[99,100]
+myImagePlot(yy)
+myImagePlot(yy[nrow(yy):-1:1,])
+10:-1:1
+10::1
+10:1
+myImagePlot(yy[nrow(yy):1,])
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-1.csv")
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = 0
+myImagePlot(yy[nrow(yy):1,])
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-1.csv")
+yy = as.matrix(xx)
+myImagePlot(yy[nrow(yy):1,])
+yy[!is.finite(yy)] = 0
+myImagePlot(yy[nrow(yy):1,])
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-3.csv")
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = 0
+myImagePlot(yy[nrow(yy):1,])
+36.81 - 36.49
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-1.csv")
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = 0
+myImagePlot(yy[nrow(yy):1,])
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-3.csv")
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = 0
+myImagePlot(yy[nrow(yy):1,])
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-13.csv")
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = 0
+myImagePlot(yy[nrow(yy):1,])
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-1.csv")
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = 0
+myImagePlot(yy[nrow(yy):1,])
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-10.csv")
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-5.csv")
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = 0
+myImagePlot(yy[nrow(yy):1,])
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-1.csv")
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = 0
+myImagePlot(yy[nrow(yy):1,])
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-1.csv")
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = 0
+myImagePlot(yy[nrow(yy):1,])
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-1.csv")
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = 0
+myImagePlot(yy[nrow(yy):1,])
+xx = read.csv("~/Dropbox/NairobiAccess/Data/python/distances/nairobi/driving-1.csv")
+yy = as.matrix(xx)
+yy[!is.finite(yy)] = NA
+myImagePlot(yy[nrow(yy):1,])
+rnorm(3)
+rnorm(4)
+x = t(rnorm(4))
+x
+x = rnorm(4)
+ones(1, 2)
+oo = rep(1, 2)
+x %*% t(oo)
+matrix(c(1, 0, 1, 0, 1, 0, 0, 1))
+matrix(c(1, 0, 1, 0, 1, 0, 0, 1), 2, 4)
+jj = matrix(c(1, 0, 1, 0, 1, 0, 0, 1), 2, 4)
+(x %*% t(oo)) %*% jj
+x
+diag(x)
+oo
+jj
+t(jj)
+diag(x) %*% t(jj)
+diag(x)
+diag(x) %*% diag(x)
+library(rstan)#
+rstan_options(auto_write = TRUE)#
+options(mc.cores = parallel::detectCores())#
+#
+setwd("~/projects/coffee/market")#
+source("tools_prices.R")#
+#
+prices <- read.intlprice()#
+cost_sell <- c()#
+for (year in 1990:2009)#
+    cost_sell <- c(cost_sell, mean((prices$price.arabica[prices$year == year] + prices$price.robusta[prices$year == year]) / 2))#
+#
+setwd("~/projects/jmp/estimate")#
+source("data.R")
+install.packages(c('repr', 'IRdisplay', 'crayon', 'pbdZMQ', 'devtools'))
+devtools::install_github('IRkernel/IRkernel')
+install.packages(c('repr', 'IRdisplay', 'evaluate', 'crayon', 'pbdZMQ', 'devtools', 'uuid', 'digest'))
+install.packages('jsonlite')
+values <- read.delim(paste0(datapath, "dataTEXT/saudata-new/values.csv"), sep=",", header=F)
+174.90 / 2204.62
+library(fle)
+library(lfe)
+?felm
+setwd("~/research/gcp/impact-calculations/interpolate")
+load("mortality_dropbin.RData")
+load("mortality_dropbin.RData")
+la <- extract(fit, permute=T)
+library(rstan)
+la <- extract(fit, permute=T)
+names(la)
+setwd("~/research/gcp/impact-calculations/interpolate")#
+#
+library(reshape2)#
+library(ggplot2)
+gammas.om <- read.csv("simple-serrpool-ominus.csv")#
+gammas.om$method <- "SE Pool (O-)"#
+gammas.am <- read.csv("simple-novcv-aminus.csv")#
+gammas.am$method <- "SE Hierarchical (A-)"#
+gammas.bm <- read.csv("simple-vcvpool-bminus.csv")#
+gammas.bm$method <- "VCV Pool (B-)"#
+gammas.ob <- read.csv("simple-vcvpool-o-as-b.csv")#
+gammas.ob$method <- "SE Pool using VCV Pool Model (O-)"#
+gammas.bm.bra <- read.csv("simple-vcvpool-bminus-BRA.csv")#
+gammas.bm.bra$method <- "Brazil VCV (B-)"#
+gammas.bm.chn <- read.csv("simple-vcvpool-bminus-CHN.csv")#
+gammas.bm.chn$method <- "China VCV (B-)"#
+gammas.bm.ind <- read.csv("simple-vcvpool-bminus-IND.csv")#
+gammas.bm.ind$method <- "India VCV (B-)"#
+gammas.bm.mex <- read.csv("simple-vcvpool-bminus-MEX.csv")#
+gammas.bm.mex$method <- "Mexico VCV (B-)"#
+#
+##gammas.x <- subset(read.csv("comparison-all.csv"), method == 'seemur')#
+gammas.x <- read.csv("seemur.csv")#
+gammas.x$method <- "SUR"#
+#
+gammas.op1 <- read.csv("simple-serrsmooth-oplus1.csv")#
+gammas.op1$method <- "SE Pool (O+1)"#
+gammas.op2 <- read.csv("simple-serrsmooth-oplus2.csv")#
+gammas.op2$method <- "SE Pool (O+2)"#
+gammas.op4 <- read.csv("simple-serrsmooth-oplus4.csv")#
+gammas.op4$method <- "SE Pool (O+4)"#
+gammas.op8 <- read.csv("simple-serrsmooth-oplus8.csv")#
+gammas.op8$method <- "SE Pool (O+8)"
+setwd("~/research/gcp/impact-calculations/interpolate/validate")
+setwd("~/research/gcp/impact-calculations/interpolate/validation")
+gammas.om <- read.csv("simple-serrpool-ominus.csv")#
+gammas.om$method <- "SE Pool (O-)"#
+gammas.am <- read.csv("simple-novcv-aminus.csv")#
+gammas.am$method <- "SE Hierarchical (A-)"#
+gammas.bm <- read.csv("simple-vcvpool-bminus.csv")#
+gammas.bm$method <- "VCV Pool (B-)"
+gammas.ob <- read.csv("simple-vcvpool-o-as-b.csv")#
+gammas.ob$method <- "SE Pool using VCV Pool Model (O-)"#
+gammas.bm.bra <- read.csv("simple-vcvpool-bminus-BRA.csv")#
+gammas.bm.bra$method <- "Brazil VCV (B-)"#
+gammas.bm.chn <- read.csv("simple-vcvpool-bminus-CHN.csv")#
+gammas.bm.chn$method <- "China VCV (B-)"#
+gammas.bm.ind <- read.csv("simple-vcvpool-bminus-IND.csv")#
+gammas.bm.ind$method <- "India VCV (B-)"#
+gammas.bm.mex <- read.csv("simple-vcvpool-bminus-MEX.csv")#
+gammas.bm.mex$method <- "Mexico VCV (B-)"
+##gammas.x <- subset(read.csv("comparison-all.csv"), method == 'seemur')#
+gammas.x <- read.csv("seemur.csv")#
+gammas.x$method <- "SUR"#
+#
+gammas.op1 <- read.csv("simple-serrsmooth-oplus1.csv")#
+gammas.op1$method <- "SE Pool (O+1)"#
+gammas.op2 <- read.csv("simple-serrsmooth-oplus2.csv")#
+gammas.op2$method <- "SE Pool (O+2)"#
+gammas.op4 <- read.csv("simple-serrsmooth-oplus4.csv")#
+gammas.op4$method <- "SE Pool (O+4)"#
+gammas.op8 <- read.csv("simple-serrsmooth-oplus8.csv")#
+gammas.op8$method <- "SE Pool (O+8)"
+gammas <- rbind(gammas.x, gammas.bm.bra, gammas.bm.chn, gammas.bm.ind, gammas.bm.mex, gammas.bm)#
+    ##gammas <- rbind(gammas.om, gammas.ob)#
+#
+    gammas$method <- factor(gammas$method, levels=c(unique(gammas$method[gammas$method != "SUR"]), "SUR"))
+pg <- melt(gammas[, c('method', 'binlo', 'binhi', 'intercept_coef', 'bindays_coef', 'gdppc_coef', 'popop_coef')], id.vars=c('method', 'binlo', 'binhi'))#
+pg2 <- melt(gammas[, c('method', 'binlo', 'binhi', 'intercept_serr', 'bindays_serr', 'gdppc_serr', 'popop_serr')], id.vars=c('method', 'binlo', 'binhi'))#
+pg$serr <- pg2$value#
+#
+pg$binx <- (pmax(pg$binlo, -22) + pmin(pg$binhi, 38)) / 2#
+#
+dodge <- position_dodge(width=3)#
+#
+pg$ymin <- pg$value - pg$serr#
+pg$ymax <- pg$value + pg$serr#
+#
+levels(pg$variable) <- c("Intercept", "Days in bin", "GDP P.C.", "P.W. Pop. Dens.")#
+#
+ggplot(subset(pg, variable != 'Intercept'), aes(x=binx, y=value, ymin=ymin, ymax=ymax, width=5, colour=method)) +#
+    facet_grid(variable ~ ., scales="free") +#
+    geom_point(position=dodge) +#
+    geom_errorbar(position=dodge) + geom_hline(yintercept=0) + theme_bw() +#
+    scale_x_continuous(name="") + scale_y_continuous(expand=c(0, 0)) +#
+    scale_colour_discrete(name="Method:") +#
+    theme(legend.position="top")
+names(la)
+mean(la$baselin)
+mean(la$baseline)
+mean(la$gamma_droppd)
+mean(la$gamma_dropped)
+dim(la$gamma_dropped)
+dim(la$gamma_dropped[,1])
+mean(la$gamma_dropped[,1])
+mean(la$gamma_dropped[,2])
+mean(la$gamma_dropped[,3])
+mean(la$gamma_dropped[,4])
+dim(la$gamma)
+Ddf <- data.frame(binlo=c(), binhi=c(), predictor=c(), gamma=c())#
+for (ii in 1:length(binlos)) {#
+    for (jj in 1:4) {#
+        df <- rbind(df, data.frame(binlo=binlos[ii], binhi=binhis[ii], predictor=predictors[jj],#
+                                   gamma=la$gamma[, ii, jj]))#
+    }#
+}
+library(reshape2)#
+library(ggplot2)#
+#
+binlos <- c(-Inf, -17, -12, -7, -2, 3, 8, 13, 23, 28, 33)#
+binhis <- c(-17, -12, -7, -2, 3, 8, 13, 18, 28, 33, Inf)#
+predictors <- c("Intercept", "Days in Bin", "GDP P.C.", "P.W. Pop. Dens.")#
+#
+df <- data.frame(binlo=c(), binhi=c(), predictor=c(), gamma=c())#
+for (ii in 1:length(binlos)) {#
+    for (jj in 1:4) {#
+        df <- rbind(df, data.frame(binlo=binlos[ii], binhi=binhis[ii], predictor=predictors[jj],#
+                                   gamma=la$gamma[, ii, jj]))#
+    }#
+}
+for (jj in 1:4) {#
+    df <- rbind(df, data.frame(binlo=18, binhi=23, predictor=predictors[jj],#
+                               gamma=la$gamma_dropped[, jj]))#
+}
+df$binx <- (binlos[2:(length(binlos)-1)] + binhis[2:(length(binhis)-1)]) / 2
+df$binx <- (df$binlo + df$binhi) / 2
+df$binx[df$binx == -Inf] <- -19.5#
+df$binx[df$binx == Inf] <- 35.5
+ggplot(df, aes(x=binx, y=gamma)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_errorbar()
+ggplot(df, aes(x=binx, y=gamma)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_boxplot()
+head(df)
+df$binx <- factor(df$binx)#
+#
+ggplot(df, aes(x=binx, y=gamma)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_boxplot()
+df <- data.frame(binlo=c(), binhi=c(), predictor=c(), gamma=c())#
+for (ii in 1:length(binlos)) {#
+    for (jj in 1:4) {#
+        df <- rbind(df, data.frame(binlo=binlos[ii], binhi=binhis[ii], predictor=predictors[jj],#
+                                   gamma=la$gamma[, ii, jj] + la$gamma_dropped[, jj]))#
+    }#
+}#
+for (jj in 1:4) {#
+    df <- rbind(df, data.frame(binlo=18, binhi=23, predictor=predictors[jj],#
+                               gamma=la$gamma_dropped[, jj]))#
+}#
+#
+df$binx <- (df$binlo + df$binhi) / 2#
+df$binx[df$binx == -Inf] <- -19.5#
+df$binx[df$binx == Inf] <- 35.5#
+df$binx <- factor(df$binx)#
+#
+ggplot(df, aes(x=binx, y=gamma)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_boxplot()
+df <- data.frame(binlo=c(), binhi=c(), predictor=c(), gamma=c(), sdev=c())#
+for (ii in 1:length(binlos)) {#
+    for (jj in 1:4) {#
+        values <- la$gamma[, ii, jj] + la$gamma_dropped[, jj]#
+        df <- rbind(df, data.frame(binlo=binlos[ii], binhi=binhis[ii], predictor=predictors[jj],#
+                                   gamma=mean(values), sdev=sd(values)))#
+    }#
+}#
+for (jj in 1:4) {#
+    values <- la$gamma_dropped[, jj]#
+    df <- rbind(df, data.frame(binlo=18, binhi=23, predictor=predictors[jj],#
+                               gamma=mean(la$gamma_dropped[, jj]), sd(values)))#
+}
+df <- data.frame(binlo=c(), binhi=c(), predictor=c(), gamma=c(), sdev=c())#
+for (ii in 1:length(binlos)) {#
+    for (jj in 1:4) {#
+        values <- la$gamma[, ii, jj] + la$gamma_dropped[, jj]#
+        df <- rbind(df, data.frame(binlo=binlos[ii], binhi=binhis[ii], predictor=predictors[jj],#
+                                   gamma=mean(values), sdev=sd(values)))#
+    }#
+}#
+for (jj in 1:4) {#
+    values <- la$gamma_dropped[, jj]#
+    df <- rbind(df, data.frame(binlo=18, binhi=23, predictor=predictors[jj],#
+                               gamma=mean(la$gamma_dropped[, jj]), sdev=sd(values)))#
+}
+df$binx <- (df$binlo + df$binhi) / 2#
+df$binx[df$binx == -Inf] <- -19.5#
+df$binx[df$binx == Inf] <- 35.5#
+df$binx <- factor(df$binx)
+ggplot(df, aes(x=binx, y=gamma)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point() +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma + sdev))
+ggplot(df, aes(x=binx, y=gamma)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point() +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev))
+df <- data.frame(binlo=c(), binhi=c(), predictor=c(), gamma=c(), sdev=c(), ismiss=c())#
+for (ii in 1:length(binlos)) {#
+    for (jj in 1:4) {#
+        values <- la$gamma[, ii, jj] + la$gamma_dropped[, jj]#
+        df <- rbind(df, data.frame(binlo=binlos[ii], binhi=binhis[ii], predictor=predictors[jj],#
+                                   gamma=mean(values), sdev=sd(values)), ismiss=F)#
+    }#
+}#
+for (jj in 1:4) {#
+    values <- la$gamma_dropped[, jj]#
+    df <- rbind(df, data.frame(binlo=18, binhi=23, predictor=predictors[jj],#
+                               gamma=mean(la$gamma_dropped[, jj]), sdev=sd(values), ismiss=T))#
+}#
+#
+df$binx <- (df$binlo + df$binhi) / 2#
+df$binx[df$binx == -Inf] <- -19.5#
+df$binx[df$binx == Inf] <- 35.5#
+df$binx <- factor(df$binx)#
+#
+ggplot(df, aes(x=binx, y=gamma, colour=ismiss)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point() +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev))
+head(df)
+df <- data.frame(binlo=c(), binhi=c(), predictor=c(), gamma=c(), sdev=c(), ismiss=c())#
+for (ii in 1:length(binlos)) {#
+    for (jj in 1:4) {#
+        values <- la$gamma[, ii, jj] + la$gamma_dropped[, jj]#
+        df <- rbind(df, data.frame(binlo=binlos[ii], binhi=binhis[ii], predictor=predictors[jj],#
+                                   gamma=mean(values), sdev=sd(values), ismiss=F))#
+    }#
+}#
+for (jj in 1:4) {#
+    values <- la$gamma_dropped[, jj]#
+    df <- rbind(df, data.frame(binlo=18, binhi=23, predictor=predictors[jj],#
+                               gamma=mean(la$gamma_dropped[, jj]), sdev=sd(values), ismiss=T))#
+}#
+#
+df$binx <- (df$binlo + df$binhi) / 2#
+df$binx[df$binx == -Inf] <- -19.5#
+df$binx[df$binx == Inf] <- 35.5#
+df$binx <- factor(df$binx)#
+#
+ggplot(df, aes(x=binx, y=gamma, colour=ismiss)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point() +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev))
+fullbayes0 <- read.csv("validation/fullbayes0.csv")
+getwd()
+fullbayes0 <- read.csv("fullbayes0.csv")
+seemur <- read.csv("seemur.csv")
+head(fullbayes)
+head(fullbayes0)
+nrow(fullbayes0)
+for (ii in 1:nrow(fullbayes0))#
+    df <- rbind(df, data.frame(binlo=rep(fullbayes0$binlo, each=nrow(fullbayes0)),#
+                               binhi=rep(fullbayes0$binhi, each=nrow(fullbayes0)),#
+                               predictor=rep(predictors, each=nrow(fullbayes0)),#
+                               gamma=c(fullbayes0$intercept_coef, fullbayes0$bindays_coef,#
+                                       fullbayes0$gdppc_coef, fullbayes0$popop_coef),#
+                               sdev=c(fullbayes0$intercept_serr, fullbayes0$bindays_serr,#
+                                       fullbayes0$gdppc_serr, fullbayes0$popop_serr)))
+data.frame(binlo=rep(fullbayes0$binlo, each=nrow(fullbayes0)),#
+                               binhi=rep(fullbayes0$binhi, each=nrow(fullbayes0)),#
+                               predictor=rep(predictors, each=nrow(fullbayes0)),#
+                               gamma=c(fullbayes0$intercept_coef, fullbayes0$bindays_coef,#
+                                       fullbayes0$gdppc_coef, fullbayes0$popop_coef),#
+                               sdev=c(fullbayes0$intercept_serr, fullbayes0$bindays_serr,#
+                                       fullbayes0$gdppc_serr, fullbayes0$popop_serr))
+data.frame(binlo=rep(fullbayes0$binlo, each=nrow(fullbayes0)),#
+                               binhi=rep(fullbayes0$binhi, each=nrow(fullbayes0)),#
+                               predictor=rep(predictors, each=nfor (ii in 1:nrow(fullbayes0))#
+    df <- rbind(df, data.frame(binlo=rep(fullbayes0$binlo, 4),#
+                               binhi=rep(fullbayes0$binhi, 4),#
+                               predictor=rep(predictors, each=nrow(fullbayes0)),#
+                               gamma=c(fullbayes0$intercept_coef, fullbayes0$bindays_coef,#
+                                       fullbayes0$gdppc_coef, fullbayes0$popop_coef),#
+                               sdev=c(fullbayes0$intercept_serr, fullbayes0$bindays_serr,#
+                                       fullbayes0$gdppc_serr, fullbayes0$popop_serr)))#
+row(fullbayes0)),#
+                               gamma=c(fullbayes0$intercept_coef, fullbayes0$bindays_coef,#
+                                       fullbayes0$gdppc_coef, fullbayes0$popop_coef),#
+                               sdev=c(fullbayes0$intercept_serr, fullbayes0$bindays_serr,#
+                                       fullbayes0$gdppc_serr, fullbayes0$popop_serr))
+for (ii in 1:nrow(fullbayes0))#
+    df <- rbind(df, data.frame(binlo=rep(fullbayes0$binlo, 4),#
+                               binhi=rep(fullbayes0$binhi, 4),#
+                               predictor=rep(predictors, each=nrow(fullbayes0)),#
+                               gamma=c(fullbayes0$intercept_coef, fullbayes0$bindays_coef,#
+                                       fullbayes0$gdppc_coef, fullbayes0$popop_coef),#
+                               sdev=c(fullbayes0$intercept_serr, fullbayes0$bindays_serr,#
+                                       fullbayes0$gdppc_serr, fullbayes0$popop_serr)))
+binlos <- c(-Inf, -17, -12, -7, -2, 3, 8, 13, 23, 28, 33)#
+binhis <- c(-17, -12, -7, -2, 3, 8, 13, 18, 28, 33, Inf)#
+predictors <- c("Intercept", "Days in Bin", "GDP P.C.", "P.W. Pop. Dens.")#
+#
+df <- data.frame(binlo=c(), binhi=c(), predictor=c(), gamma=c(), sdev=c(), ismiss=c())#
+for (ii in 1:length(binlos)) {#
+    for (jj in 1:4) {#
+        values <- la$gamma[, ii, jj] + la$gamma_dropped[, jj]#
+        df <- rbind(df, data.frame(binlo=binlos[ii], binhi=binhis[ii], predictor=predictors[jj],#
+                                   gamma=mean(values), sdev=sd(values), ismiss=F))#
+    }#
+}#
+for (jj in 1:4) {#
+    values <- la$gamma_dropped[, jj]#
+    df <- rbind(df, data.frame(binlo=18, binhi=23, predictor=predictors[jj],#
+                               gamma=mean(la$gamma_dropped[, jj]), sdev=sd(values), ismiss=T))#
+}#
+#
+fullbayes0 <- read.csv("fullbayes0.csv")#
+seemur <- read.csv("seemur.csv")#
+#
+for (ii in 1:nrow(fullbayes0))#
+    df <- rbind(df, data.frame(binlo=rep(fullbayes0$binlo, 4),#
+                               binhi=rep(fullbayes0$binhi, 4),#
+                               predictor=rep(predictors, each=nrow(fullbayes0)),#
+                               gamma=c(fullbayes0$intercept_coef, fullbayes0$bindays_coef,#
+                                       fullbayes0$gdppc_coef, fullbayes0$popop_coef),#
+                               sdev=c(fullbayes0$intercept_serr, fullbayes0$bindays_serr,#
+                                       fullbayes0$gdppc_serr, fullbayes0$popop_serr)))
+head(df)
+for (ii in 1:nrow(fullbayes0))#
+    df <- rbind(df, data.frame(binlo=rep(fullbayes0$binlo, 4),#
+                               binhi=rep(fullbayes0$binhi, 4),#
+                               predictor=rep(predictors, each=nrow(fullbayes0)),#
+                               gamma=c(fullbayes0$intercept_coef, fullbayes0$bindays_coef,#
+                                       fullbayes0$gdppc_coef, fullbayes0$popop_coef),#
+                               sdev=c(fullbayes0$intercept_serr, fullbayes0$bindays_serr,#
+                                       fullbayes0$gdppc_serr, fullbayes0$popop_serr), ismiss=F))
+binlos <- c(-Inf, -17, -12, -7, -2, 3, 8, 13, 23, 28, 33)#
+binhis <- c(-17, -12, -7, -2, 3, 8, 13, 18, 28, 33, Inf)#
+predictors <- c("Intercept", "Days in Bin", "GDP P.C.", "P.W. Pop. Dens.")#
+#
+df <- data.frame(binlo=c(), binhi=c(), predictor=c(), gamma=c(), sdev=c(), ismiss=c(), method=c())#
+for (ii in 1:length(binlos)) {#
+    for (jj in 1:4) {#
+        values <- la$gamma[, ii, jj] + la$gamma_dropped[, jj]#
+        df <- rbind(df, data.frame(binlo=binlos[ii], binhi=binhis[ii], predictor=predictors[jj],#
+                                   gamma=mean(values), sdev=sd(values), ismiss=F, method="dropbin"))#
+    }#
+}#
+for (jj in 1:4) {#
+    values <- la$gamma_dropped[, jj]#
+    df <- rbind(df, data.frame(binlo=18, binhi=23, predictor=predictors[jj],#
+                               gamma=mean(la$gamma_dropped[, jj]), sdev=sd(values),#
+                               ismiss=T, method="dropbin"))#
+}#
+#
+fullbayes0 <- read.csv("fullbayes0.csv")#
+seemur <- read.csv("seemur.csv")#
+#
+for (ii in 1:nrow(fullbayes0))#
+    df <- rbind(df, data.frame(binlo=rep(fullbayes0$binlo, 4),#
+                               binhi=rep(fullbayes0$binhi, 4),#
+                               predictor=rep(predictors, each=nrow(fullbayes0)),#
+                               gamma=c(fullbayes0$intercept_coef, fullbayes0$bindays_coef,#
+                                       fullbayes0$gdppc_coef, fullbayes0$popop_coef),#
+                               sdev=c(fullbayes0$intercept_serr, fullbayes0$bindays_serr,#
+                                      fullbayes0$gdppc_serr, fullbayes0$popop_serr),#
+                               ismiss=F, method="fullbayes0"))#
+#
+for (ii in 1:nrow(seemur))#
+    df <- rbind(df, data.frame(binlo=rep(seemur$binlo, 4),#
+                               binhi=rep(seemur$binhi, 4),#
+                               predictor=rep(predictors, each=nrow(seemur)),#
+                               gamma=c(seemur$intercept_coef, seemur$bindays_coef,#
+                                       seemur$gdppc_coef, seemur$popop_coef),#
+                               sdev=c(seemur$intercept_serr, seemur$bindays_serr,#
+                                      seemur$gdppc_serr, seemur$popop_serr),#
+                               ismiss=F, method="seemur"))
+df$binx <- (df$binlo + df$binhi) / 2#
+df$binx[df$binx == -Inf] <- -19.5#
+df$binx[df$binx == Inf] <- 35.5#
+df$binx <- factor(df$binx)
+ggplot(df, aes(x=binx, y=gamma, colour=ismiss, group=method)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point() +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev))
+ggplot(df, aes(x=binx, y=gamma, colour=ismiss, group=method)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point(position="dodge") +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev), position="dodge")
+ggplot(df, aes(x=binx, y=gamma, colour=method, linetype=method)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point(position="dodge") +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev), position="dodge")
+ggplot(df, aes(x=binx, y=gamma, colour=method, linetype=ismiss)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point(position="dodge") +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev), position="dodge")
+ggplot(df, aes(x=binx, y=gamma, colour=method, linetype=ismiss)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point() +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev), position="dodge")
+ggplot(df, aes(x=binx, y=gamma, colour=method, linetype=ismiss)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev), position="dodge")
+ggplot(subset(df, method != "fullbayes0"), aes(x=binx, y=gamma, colour=method, linetype=ismiss)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point() +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev), position="dodge")
+ggplot(subset(df, method != "fullbayes0"), aes(x=binx, y=gamma, colour=method, linetype=ismiss)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point(position="dodge") +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev), position="dodge")
+dodge <- position_dodge(width=3)#
+#
+ggplot(subset(df, method != "fullbayes0"), aes(x=binx, y=gamma, colour=method, linetype=ismiss)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point(position=dodge) +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev), position=dodge)
+dodge <- position_dodge(width=3)#
+#
+ggplot(subset(df, method != "fullbayes0"), aes(x=binx, y=gamma, colour=method, linetype=ismiss)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+        geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev))
+df <- data.frame(binlo=c(), binhi=c(), predictor=c(), gamma=c(), sdev=c(), ismiss=c(), method=c())#
+for (ii in 1:length(binlos)) {#
+    for (jj in 1:4) {#
+        values <- la$gamma[, ii, jj]#
+        df <- rbind(df, data.frame(binlo=binlos[ii], binhi=binhis[ii], predictor=predictors[jj],#
+                                   gamma=mean(values), sdev=sd(values), ismiss=F, method="dropbin"))#
+    }#
+}#
+for (jj in 1:4) {#
+    values <- la$gamma_dropped[, jj]#
+    df <- rbind(df, data.frame(binlo=18, binhi=23, predictor=predictors[jj],#
+                               gamma=mean(la$gamma_dropped[, jj]), sdev=sd(values),#
+                               ismiss=T, method="dropbin"))#
+}#
+#
+fullbayes0 <- read.csv("fullbayes0.csv")#
+seemur <- read.csv("seemur.csv")#
+#
+for (ii in 1:nrow(fullbayes0))#
+    df <- rbind(df, data.frame(binlo=rep(fullbayes0$binlo, 4),#
+                               binhi=rep(fullbayes0$binhi, 4),#
+                               predictor=rep(predictors, each=nrow(fullbayes0)),#
+                               gamma=c(fullbayes0$intercept_coef, fullbayes0$bindays_coef,#
+                                       fullbayes0$gdppc_coef, fullbayes0$popop_coef),#
+                               sdev=c(fullbayes0$intercept_serr, fullbayes0$bindays_serr,#
+                                      fullbayes0$gdppc_serr, fullbayes0$popop_serr),#
+                               ismiss=F, method="fullbayes0"))#
+#
+for (ii in 1:nrow(seemur))#
+    df <- rbind(df, data.frame(binlo=rep(seemur$binlo, 4),#
+                               binhi=rep(seemur$binhi, 4),#
+                               predictor=rep(predictors, each=nrow(seemur)),#
+                               gamma=c(seemur$intercept_coef, seemur$bindays_coef,#
+                                       seemur$gdppc_coef, seemur$popop_coef),#
+                               sdev=c(seemur$intercept_serr, seemur$bindays_serr,#
+                                      seemur$gdppc_serr, seemur$popop_serr),#
+                               ismiss=F, method="seemur"))#
+#
+df$binx <- (df$binlo + df$binhi) / 2#
+df$binx[df$binx == -Inf] <- -19.5#
+df$binx[df$binx == Inf] <- 35.5#
+df$binx <- factor(df$binx)#
+#
+dodge <- position_dodge(width=3)#
+#
+ggplot(subset(df, method != "fullbayes0"), aes(x=binx, y=gamma, colour=method, linetype=ismiss)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point(position=dodge) +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev), position=dodge)
+ggplot(subset(df, method != "fullbayes0"), aes(x=binx, y=gamma, colour=method, linetype=ismiss)) +#
+    facet_grid(predictor ~ ., scales="free") +#
+    geom_point() +#
+    geom_errorbar(aes(ymin=gamma + sdev, ymax=gamma - sdev))
+N = 10
+runif(N, 0, 100)
+rnorm(100)
+gen <- function(const, w.lo, w.hi, wealth) {#
+    sensitivity <- 1 - wealth#
+    const + sensitivity * w.lo * .5 + sensitivity * w.hi + rnorm(length(w.lo))#
+}#
+#
+randgen <- function(N, const, wealth) {#
+    w.hi <- runif(N, 0, 100)#
+    w.lo <- 100 - w.hi#
+    gen(const, w.lo, w.hi, wealth)#
+}
+N <- 1000#
+poor <- randgen(N, 10, .1)
+poor
+randgen <- function(N, const, wealth) {#
+    w.hi <- runif(N, 0, 100)#
+    w.lo <- 100 - w.hi#
+    data.frame(w.lo, w.hi, y=gen(const, w.lo, w.hi, wealth))#
+}#
+#
+N <- 1000#
+poor <- randgen(N, 10, .1)#
+rich <- randgen(N, 10, .9)
+randgen <- function(N, const, wealth) {#
+    w.hi <- runif(N, 0, 100)#
+    w.lo <- 100 - w.hi#
+    data.frame(w.lo, w.hi, wealth, y=gen(const, w.lo, w.hi, wealth))#
+}#
+#
+N <- 1000#
+poor <- randgen(N, 10, .1)#
+rich <- randgen(N, 10, .9)
+N <- 1000#
+poor <- randgen(N, 10, .1)#
+poor$region <- "poor"#
+rich <- randgen(N, 10, .9)#
+rich$reigon <- "rich"#
+#
+summary(lm(y ~ factor(region) + w.lo + w.hi))
+summary(lm(y ~ factor(region) + w.lo + w.hi, data=rbind(poor, rich)))
+poor
+rich
+head(poor)
+rbind(poor, rich)
+N <- 1000#
+poor <- randgen(N, 10, .1)#
+poor$region <- "poor"#
+rich <- randgen(N, 10, .9)#
+rich$region <- "rich"#
+#
+summary(lm(y ~ factor(region) + w.lo + w.hi, data=rbind(poor, rich)))
+summary(lm(y ~ factor(region) + w.hi, data=rbind(poor, rich)))
+data <- rbind(poor, rich)#
+data$w.hi.wealth <- data$w.hi * data$wealth
+summary(lm(y ~ factor(region) + w.hi + w.hi.wealth, data=data))
+stan.model <- "#
+data {#
+    int<lower=1> N; // number of study regions#
+    int<lower=1> K; // number of coefficients (not including dropped)#
+    int<lower=1> L; // number of predictors, including intercept#
+#
+    vector[K] beta[N]; // estimated effects#
+    cov_matrix[K] Sigma[N]; // VCV across betas#
+#
+    matrix[N, L] x[K]; // predictors across regions#
+    matrix[N, L] x_dropped; // predictors across regions for dropped bin#
+}#
+transformed data {#
+    real maxbeta;#
+#
+    // Optimization: only compute decomposition once#
+    matrix[K, K] CholL[N];#
+    for (ii in 1:N)#
+      CholL[ii] <- cholesky_decompose(Sigma[ii]);#
+#
+    for (ii in 1:N)#
+      maxbeta <- fmax(maxbeta, max(beta[ii]));#
+}#
+parameters {#
+    vector[L] gamma[K]; // surface parameters#
+    real<lower=0> tau[K]; // variance in hyper equation#
+    vector<lower=0>[K] delta_theta[N]; // z-scores of true effects + baseline#
+#
+    vector<lower=0>[N] baseline; // baseline value in coeff space, so all beta + baseline > 0#
+    vector[L] gamma_dropped;#
+    real<lower=0> tau_dropped;#
+}#
+transformed parameters {#
+    vector<lower=0>[N] delta_transtheta[K]; // transpose of delta_theta#
+    for (ii in 1:N) {#
+      for (kk in 1:K)#
+        delta_transtheta[kk][ii] <- delta_theta[ii][kk];#
+    }#
+}#
+model {#
+    baseline ~ lognormal(x_dropped * gamma_dropped, tau_dropped);#
+#
+    // observed betas drawn from true parameters#
+    for (ii in 1:N)#
+       beta[ii] ~ multi_normal_cholesky(delta_theta[ii] - baseline[ii], CholL[ii]);#
+#
+    // true parameters produced by linear expression#
+    for (kk in 1:K)#
+      increment_log_prob(lognormal_log(delta_transtheta[kk], x[kk] * gamma[kk], tau[kk]));#
+}"
+library(rstan)
+?stan
+lm(y ~ w.hi, data=poor)
+mod.poor <- lm(y ~ w.hi, data=poor)#
+mod.rich <- lm(y ~ w.hi, data=rich)
+mod.poor$coeff
+?matrix
+names(mod.poor)
+vcov(mod.poor)
+vcov(mod.poor)[2,2]
+stan.data <- list(N=2, K=1, L=2, beta=c(mod.poor$coeff[2], mod.rich$coeff[2]),#
+                  Sigma=c(vcov(mod.poor)[2,2], vcov(mod.rich)[2,2]),#
+                  x=c(.1, .9), x_dropped=c(.1, .9))
+?stan
+fit <- stan(model_code=stan.model, data=model.data, iter=1000, chains=4)
+fit <- stan(model_code=stan.model, data=stan.data, iter=1000, chains=4)
+stan.data <- list(N=2, K=1, L=2, beta=matrix(c(mod.poor$coeff[2], mod.rich$coeff[2]), 2, 1),#
+                  Sigma=matrix(c(vcov(mod.poor)[2,2], vcov(mod.rich)[2,2]), 2, 1),#
+                  x=matrix(c(.1, .9), 1, 2), x_dropped=matrix(c(.1, .9), 1, 2))#
+#
+library(rstan)#
+#
+fit <- stan(model_code=stan.model, data=stan.data, iter=1000, chains=4)
+?array
+stan.data <- list(N=2, K=1, L=2, beta=matrix(c(mod.poor$coeff[2], mod.rich$coeff[2]), 2, 1),#
+                  Sigma=array(c(vcov(mod.poor)[2,2], vcov(mod.rich)[2,2]), c(2, 1, 1)),#
+                  x=matrix(c(.1, .9), 1, 2), x_dropped=matrix(c(.1, .9), 1, 2))#
+#
+library(rstan)#
+#
+fit <- stan(model_code=stan.model, data=stan.data, iter=1000, chains=4)
+matrix(c(1, 2, 3, 4), 2, 2)
+array(c(1, 1, .1, .9), c(1, 2, 2))
+array(c(1, .1, 1, .9), c(1, 2, 2))
+matrix(c(1, .1, 1, .9), 2, 2)
+matrix(c(1, 1, .1, .9), 2, 2)
+stan.data <- list(N=2, K=1, L=2, beta=matrix(c(mod.poor$coeff[2], mod.rich$coeff[2]), 2, 1),#
+                  Sigma=array(c(vcov(mod.poor)[2,2], vcov(mod.rich)[2,2]), c(2, 1, 1)),#
+                  x=array(c(1, 1, .1, .9), c(1, 2, 2)), x_dropped=matrix(c(1, 1, .1, .9), 2, 2))
+fit <- stan(model_code=stan.model, data=stan.data, iter=1000, chains=4)
+fit
+fit <- stan(fit=fit, data=stan.data, iter=1000, chains=10)
+fit
+## True generating process#
+gen <- function(const, w.lo, w.hi, wealth) {#
+    sensitivity <- 1 - wealth#
+    ##const + sensitivity * w.lo * .5 + sensitivity * w.hi + rnorm(length(w.lo))#
+    const + exp(sensitivity) * w.lo * .5 + exp(sensitivity) * w.hi + rnorm(length(w.lo))#
+}#
+#
+randgen <- function(N, const, wealth) {#
+    w.hi <- runif(N, 0, 100)#
+    w.lo <- 100 - w.hi#
+    data.frame(w.lo, w.hi, wealth, y=gen(const, w.lo, w.hi, wealth))#
+}#
+#
+N <- 1000#
+poor <- randgen(N, 10, .1)#
+poor$region <- "poor"#
+rich <- randgen(N, 10, .9)#
+rich$region <- "rich"#
+#
+data <- rbind(poor, rich)#
+data$w.hi.wealth <- data$w.hi * data$wealth#
+#
+summary(lm(y ~ factor(region) + w.hi + w.hi.wealth, data=data))
+mod.poor <- lm(y ~ w.hi, data=poor)#
+mod.rich <- lm(y ~ w.hi, data=rich)
+stan.data <- list(N=2, K=1, L=2, beta=matrix(c(mod.poor$coeff[2], mod.rich$coeff[2]), 2, 1),#
+                  Sigma=array(c(vcov(mod.poor)[2,2], vcov(mod.rich)[2,2]), c(2, 1, 1)),#
+                  x=array(c(1, 1, .1, .9), c(1, 2, 2)), x_dropped=matrix(c(1, 1, .1, .9), 2, 2))#
+#
+library(rstan)#
+#
+fit <- stan(model_code=stan.model, data=stan.data, iter=1000, chains=4)
+fit
