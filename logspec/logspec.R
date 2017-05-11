@@ -1,5 +1,4 @@
 library(nnls)
-library(RcppArmadillo)
 
 ## Calculate x_k exp(sum gamma_kl z_l) as a NxK matrix
 calc.covariated.predictors <- function(dmxxs, zzs, kls, mm, gammas) {
@@ -88,13 +87,20 @@ demean.yxs <- function(K, yy, xxs, adm2) {
     for (kk in 1:K)
         dmxxs[, kk] <- regional.demean(dmxxs[, kk], adm2)
 
-    list(dmyy=dmyy, dmxxs=dmxxs)
+    list(dmyy=dmyy, dmxxs=as.matrix(dmxxs))
 }
 
 ## Estimate the parameters of the log specification
 estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1000, initgammas=NULL) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
     list2env(demean.yxs(K, yy, xxs, adm2), environment())
+
+    estimate.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter, initgammas=initgammas)
+}
+
+estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1, maxiter=1000, initgammas=NULL) {
+    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1, adm2), environment())
+
     dmxxs.orig <- dmxxs
 
     print("Iterating...")
@@ -124,7 +130,7 @@ estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1
 
     for (iter in 1:maxiter) {
         ## Perform stacked regression to get signs
-        stacked <- fastLm(dmxxs.weighted, dmyy.weighted)
+        stacked <- lm(dmyy.weighted ~ 0 + dmxxs.weighted)
         betas <- stacked$coeff
 
         ## Check the performance of this stacked set of betas
@@ -183,7 +189,9 @@ estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1
             if (gammas.here == 0)
                 next
 
-            modkk <- fastLm(cbind(rep(1, sum(valid)), zzs[valid, kls[kk, ]]), stage1.logbetas[valid, kk])
+            yy.modkk <- stage1.logbetas[valid, kk]
+            xx.modkk <- as.matrix(cbind(rep(1, sum(valid)), zzs[valid, kls[kk, ]]))
+            modkk <- lm(yy.modkk ~ 0 + xx.modkk)
 
             ## Prepare values for log likelihood
             betas[kk] <- exp(modkk$coeff[1]) * sign(stacked$coeff[kk])
@@ -229,16 +237,19 @@ estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1
             dmxxs.weighted[, kk] <- dmxxs.weighted[, kk] * sqrt(weights)
     }
 
-    list(betas=betas, gammas=gammas, sigmas=adm1.sigma)
+    list(betas=betas, gammas=gammas, sigmas=adm1.sigma, likeli=bestlikeli)
 }
 
 ## Perform a weighted regression with partialed-out predictors dmxxs
 stacked.regression <- function(K, L, gammas, dmyy, dmxxs.orig, zzs, kls, mm, weights) {
     dmxxs <- calc.covariated.predictors(dmxxs.orig, zzs, kls, mm, gammas)
-    for (kk in 1:K)
-        dmxxs[, kk] <- dmxxs[, kk] * sqrt(weights)
+    if (sum(!is.finite(dmxxs)) > 0)
+        return(list(coeff=rep(NA, K)))
 
-    fastLm(dmxxs, dmyy * sqrt(weights))
+    if (length(weights) == 1)
+        lm(dmyy ~ 0 + dmxxs)
+    else
+        lm(dmyy ~ 0 + dmxxs, weights=weights)
 }
 
 ## Get stacked betas
@@ -252,13 +263,20 @@ stacked.betas <- function(K, L, gammas, dmyy, dmxxs.orig, zzs, kls, mm, weights)
 estimate.logspec.optim <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, initgammas=NULL) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
     list2env(demean.yxs(K, yy, xxs, adm2), environment())
+
+    estimate.logspec.optim.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, initgammas=initgammas)
+}
+
+estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1, initgammas=NULL) {
+    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1, adm2), environment())
     dmxxs.orig <- dmxxs
 
     if (is.null(initgammas)) {
         ## Approximation 1: No covariate effect
-        for (kk in 1:K)
-            dmxxs[, kk] <- dmxxs[, kk] * sqrt(weights)
-        stacked <- fastLm(dmxxs, dmyy * sqrt(weights))
+        if (length(weights) == 1)
+            stacked <- lm(dmyy ~ 0 + dmxxs)
+        else
+            stacked <- lm(dmyy ~ 0 + dmxxs, weights=weights)
         sigma <- sd(stacked$residuals)
 
         betas <- stacked$coeff
@@ -294,9 +312,10 @@ estimate.logspec.optim <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, ini
 
     ## Approximation 3: State-clustered errors
     dmxxs <- calc.covariated.predictors(dmxxs.orig, zzs, kls, adm1, gammas)
-    for (kk in 1:K)
-        dmxxs[, kk] <- dmxxs[, kk] * sqrt(weights)
-    stacked <- fastLm(dmxxs, dmyy * sqrt(weights))
+    if (length(weights) == 1)
+        stacked <- lm(dmyy ~ 0 + dmxxs)
+    else
+        stacked <- lm(dmyy ~ 0 + dmxxs, weights=weights)
 
     betas <- stacked$coeff
 
@@ -330,3 +349,4 @@ estimate.logspec.optim <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, ini
 
 source("methast.R")
 source("ranges.R")
+source("gradient.R")

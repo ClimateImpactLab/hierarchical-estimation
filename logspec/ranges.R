@@ -23,10 +23,10 @@ make.methast.betagamma.likeli <- function(K, L, dmxxs, dmyy, zzs, kls, mm, weigh
 }
 
 methast.betagamma <- function(K, L, dmxxs, dmyy, zzs, kls, mm, iter, beta0, gamma0, betaerr, gammaerr, weights=1) {
-    result <- methast(iter, c(beta0, gamma0), c(betaerr, gammaerr),
-                      make.methast.betagamma.likeli(K, L, dmxxs, dmyy, zzs, kls, mm, weights))
+    likelifunc <- make.methast.betagamma.likeli(K, L, dmxxs, dmyy, zzs, kls, mm, weights)
+    result <- methast(iter, c(beta0, gamma0), c(betaerr, gammaerr), likelifunc)
 
-    list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+sum(kls))], best.index=result$best.index)
+    list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+sum(kls))], best.likeli=likelifunc(result$params[result$best.index,]), best.index=result$best.index)
 }
 
 ## Use Metropolis-Hastings with N seeds

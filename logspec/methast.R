@@ -37,7 +37,7 @@ methast <- function(iter, param0, sd0, calc.likeli) {
         }
     }
 
-    list(params=params, best.index=best.index)
+    list(params=params, best.index=best.index, best.likeli=best.likeli)
 }
 
 ## Use Metropolis-Hastings with N seeds
