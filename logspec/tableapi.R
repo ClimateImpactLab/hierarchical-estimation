@@ -1,4 +1,5 @@
 source("logspec.R")
+source("search.R")
 
 ta.arguments <- function(df, outname, adm1name, adm2name, prednames, covarnames) {
     yy <- df[, outname]
@@ -31,8 +32,8 @@ ta.arguments <- function(df, outname, adm1name, adm2name, prednames, covarnames)
 ## Wrapper on estimate.logspec
 ta.estimate.logspec <- function(df, outname, adm1name, adm2name, prednames, covarnames, weights=1) {
     list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
-    result <- estimate.logspec(yy, xxs, zzs, kls, adm1, adm2, weights=weights)
-    estimate.logspec.optim(yy, xxs, zzs, kls, adm1, adm2, weights=weights, initgammas=result$gammas)
+
+    search.logspec(yy, xxs, zzs, kls, adm1, adm2, weights=weights)
 }
 
 ## Wrapper on estimate.vcv
