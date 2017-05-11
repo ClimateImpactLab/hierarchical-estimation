@@ -1,5 +1,5 @@
 ## Load the library
-source("interpolate/logspec.R", chdir=T)
+source("logspec/logspec.R", chdir=T)
 
 ## Just check that everything runs
 test.estimate.vcv <- function() {

@@ -1,7 +1,7 @@
 library(RUnit)
 
 ## Load the library
-source("interpolate/tableapi.R", chdir=T)
+source("logspec/tableapi.R", chdir=T)
 
 tstar <- 22
 

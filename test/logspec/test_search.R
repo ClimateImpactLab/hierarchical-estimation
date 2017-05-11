@@ -1,7 +1,7 @@
 library(RUnit)
 
 ## Load the library
-source("interpolate/search.R", chdir=T)
+source("logspec/search.R", chdir=T)
 
 teff0 <- .1 # Size of temperature effect
 tstar <- 21 # Lowest-effect temperature

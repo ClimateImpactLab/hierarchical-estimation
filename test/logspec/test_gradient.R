@@ -1,7 +1,7 @@
 library(RUnit)
 
 ## Load the library
-source("interpolate/logspec.R", chdir=T)
+source("logspec/logspec.R", chdir=T)
 
 tstar <- 22
 

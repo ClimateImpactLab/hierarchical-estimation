@@ -1,6 +1,6 @@
 # Using `estimate.logspec`
 
-Please see `test/interpolate/test_example.R` for an example.
+Please see `test/logspec/test_search.R` for an example.
 
 ## Terminology
 
@@ -27,6 +27,11 @@ generated from a collection of stat and county names using
 `as.numeric(factor(paste(data$state, data$county)))`.
 
 ## Calling and result
+
+First, you need to load the library:
+```
+source(".../logspec/search.R", chdir=T)
+```
 
 Call the estimate function as follows:
 ```
@@ -62,6 +67,7 @@ covarnames`, as defined below:
 
 For example, the 5-bin example is called as follows:
 ```
+source(".../logspec/tableapi.R", chdir=T)
 ta.estimate.logspec(df, 'rate', 'adm1', 'adm2',
                     c('bin1', 'bin1', 'bin1', 'bin2', 'bin2', 'bin2',
                       'bin4', 'bin4', 'bin4', 'bin5', 'bin5', 'bin5'),
