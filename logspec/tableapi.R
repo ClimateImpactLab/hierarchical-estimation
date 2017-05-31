@@ -20,7 +20,7 @@ ta.arguments <- function(df, outname, adm1name, adm2name, prednames, covarnames)
     zzs.adm1order <- c()
     for (mm in 1:max(adm1))
         zzs.adm1order <- c(zzs.adm1order, which(zzs.adm1 == mm))
-    zzs <- df[zzs.representatives, unicovars][zzs.adm1order, ] # pull out, in order of adm1 numbers
+    zzs <- df[zzs.representatives, unicovars, drop=F][zzs.adm1order, , drop=F] # pull out, in order of adm1 numbers
 
     kls <- matrix(F, ncol(xxs), ncol(zzs))
     for (kk in 1:ncol(xxs))

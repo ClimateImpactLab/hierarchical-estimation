@@ -56,11 +56,11 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
             print(paste("Improved!", likeli))
 
             if (likeli > bestlikeli + eps)
-                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter-1, betas=result$betas, gammas=result$gammas, sigmas=result$sigmas, betases=betases, gammases=gammases, bestlikeli=likeli, skipmethod=3, eps=eps))
+                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter-1, betas=result$betas, gammas=result$gammas, sigmas=result$sigma, betases=betases, gammases=gammases, bestlikeli=likeli, skipmethod=3, eps=eps))
             else {
                 betas <- result$betas
                 gammas <- result$gammas
-                sigmas <- result$sigmas
+                sigmas <- result$sigma
                 bestlikeli <- likeli
             }
         }
