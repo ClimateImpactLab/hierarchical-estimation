@@ -70,8 +70,13 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
         print("Search: Metropolis-Hastings")
         if (is.null(betases)) {
             print("Estimating SEs")
-            vcv <- calc.vcv.ols(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights)
-            ses <- sqrt(abs(diag(vcv)))
+            ses <- tryCatch({
+                vcv <- calc.vcv.ols(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights)
+                sqrt(abs(diag(vcv)))
+            }, error=function(e) {
+                result.each <- repeated.methast.each(K, L, dmxxs, dmyy, zzs, kls, adm1, 600, 100, 4, betas, gammas, sigmas, weights)
+                c(result.each$betaerr, result.each$gammaerr)
+            })
             betases <- ses[1:K]
             gammases <- ses[(K+1):(K+sum(kls))]
         }
