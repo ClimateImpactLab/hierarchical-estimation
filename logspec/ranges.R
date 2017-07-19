@@ -39,28 +39,30 @@ repeated.methast.betagamma <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, iter, 
 }
 
 ## Single Metropolis-Hastings with automatic tuning
-repeated.methast.each <- function(K, L, dmxxs, dmyy, zzs, kls, mm, iter, warmup, seeds, beta0, gamma0, sigmas, weights=1) {
+repeated.methast.each <- function(K, L, dmxxs, dmyy, zzs, kls, mm, iter, warmup, seeds, beta0, gamma0, sigmas, weights=1, verbose=F) {
     betaerr <- c()
     for (kk in 1:length(beta0)) {
+        print(c("Beta", kk))
         result <- repeated.methast(seeds, iter, warmup, beta0[kk], 1,
                                    function(beta) {
                                        beta2 = beta0
                                        beta2[kk] <- beta
                                        calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, mm,
                                                             beta2, gamma0, sigmas, weights)
-                                   })
+                                   }, verbose=verbose)
         betaerr <- c(betaerr, sd(result$params))
     }
 
     gammaerr <- c()
     for (kl in 1:length(gamma0)) {
+        print(c("Gamma", kl))
         result <- repeated.methast(seeds, iter, warmup, gamma0[kl], 1,
                                    function(gamma) {
                                        gamma2 = gamma0
                                        gamma2[kl] <- gamma
                                        calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, mm,
                                                             beta0, gamma2, sigmas, weights)
-                                   })
+                                   }, verbose=verbose)
         gammaerr <- c(gammaerr, sd(result$params))
     }
 

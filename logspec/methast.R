@@ -1,7 +1,7 @@
 ## Single Metropolis-Hastings with automatic tuning
 ## A 44% acceptance rate is optimal for 1-D sampling
 ## Want (a^44) * (b^56) = 1; Say a = 1.1, (1 / (1.1^44))^(1 / 56) = 0.9278487
-methast <- function(iter, param0, sd0, calc.likeli) {
+methast <- function(iter, param0, sd0, calc.likeli, verbose=NA) {
     params = matrix(NA, iter, length(param0))
     params[1, ] = param0
 
@@ -14,11 +14,20 @@ methast <- function(iter, param0, sd0, calc.likeli) {
     sd.product <- 1
 
     for (ii in 2:iter) {
-        if (ii %% 100 == 0)
-            print(ii)
+        if (is.na(verbose) || verbose) {
+            if (ii %% 100 == 0)
+                print(ii)
+        }
 
         param.sample <- rnorm(length(param0), params[ii-1,], sd0 * sd.product)
         this.likeli <- calc.likeli(param.sample)
+
+        if (is.nan(this.likeli) || this.likeli == -Inf) {
+            ## Immediate failure of a draw
+            params[ii, ] <- params[ii-1, ]
+            sd.product <- sd.product * 0.9278487 # was too bold
+            next
+        }
 
         prob <- exp(this.likeli - last.likeli)
 
@@ -41,12 +50,13 @@ methast <- function(iter, param0, sd0, calc.likeli) {
 }
 
 ## Use Metropolis-Hastings with N seeds
-repeated.methast <- function(seeds, iter, warmup, param0, sd0, likeli) {
+repeated.methast <- function(seeds, iter, warmup, param0, sd0, likeli, verbose=NA) {
     params <- matrix(NA, 0, length(param0))
 
     for (seed in 1:seeds) {
-        print(paste("Seed", seed))
-        methast.result <- methast(iter, param0, sd0, likeli)
+        if (is.na(verbose) || verbose)
+            print(paste("Seed", seed))
+        methast.result <- methast(iter, param0, sd0, likeli, verbose=verbose)
 
         params <- rbind(params, as.matrix(methast.result$params[(warmup+1):iter,], iter-warmup, length(param0)))
 

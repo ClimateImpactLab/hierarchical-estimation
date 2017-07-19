@@ -74,13 +74,14 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
                 vcv <- calc.vcv.ols(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights)
                 sqrt(abs(diag(vcv)))
             }, error=function(e) {
-                result.each <- repeated.methast.each(K, L, dmxxs, dmyy, zzs, kls, adm1, 600, 100, 4, betas, gammas, sigmas, weights)
+                result.each <- repeated.methast.each(K, L, dmxxs, dmyy, zzs, kls, adm1, 200, 100, 4, betas, gammas, sigmas, weights, verbose=F)
                 c(result.each$betaerr, result.each$gammaerr)
             })
             betases <- ses[1:K]
             gammases <- ses[(K+1):(K+sum(kls))]
         }
 
+        print("Performing MCMC")
         result <- methast.betagamma(K, L, dmxxs, dmyy, zzs, kls, adm1, 600, betas, gammas, betases, gammases, weights=weights)
         if (result$best.likeli > bestlikeli) {
             print(paste("Improved!", result$best.likeli))
