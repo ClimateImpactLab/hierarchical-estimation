@@ -22,7 +22,7 @@ methast <- function(iter, param0, sd0, calc.likeli, verbose=NA) {
         param.sample <- rnorm(length(param0), params[ii-1,], sd0 * sd.product)
         this.likeli <- calc.likeli(param.sample)
 
-        if (is.nan(this.likeli) || this.likeli == -Inf) {
+        if (is.na(this.likeli) || is.nan(this.likeli) || !is.finite(this.likeli)) {
             ## Immediate failure of a draw
             params[ii, ] <- params[ii-1, ]
             sd.product <- sd.product * 0.9278487 # was too bold

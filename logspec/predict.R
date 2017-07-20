@@ -36,3 +36,10 @@ rsqr <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas) {
 
     1 - sum((yy - yy.pred)^2) / sum((yy - mean(yy))^2)
 }
+
+rsqr.projected <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas) {
+    list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2), environment())
+
+    rsqr.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, betas, gammas)
+}

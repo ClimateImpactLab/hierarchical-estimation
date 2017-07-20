@@ -48,3 +48,9 @@ ta.rsqr <- function(fit, df, outname, adm1name, adm2name, prednames, covarnames)
 
     rsqr(yy, xxs, zzs, kls, adm1, adm2, fit$betas, fit$gammas)
 }
+
+ta.rsqr.projected <- function(fit, df, outname, adm1name, adm2name, prednames, covarnames) {
+    list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
+
+    rsqr.projected(yy, xxs, zzs, kls, adm1, adm2, fit$betas, fit$gammas)
+}
