@@ -104,5 +104,61 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
         }
     }
 
+    if (skipmethod != 5) {
+        print("Recentering covariates")
+
+        ## Decide on offsets
+        zzs.offset <- matrix(NA, nrow(zzs), 0)
+        offsets <- c()
+        for (ll in 1:L) {
+            offset <- mean(zzs[, ll])
+            if (offset / sd(zzs[, ll]) < 1e-3)
+                offset <- rnorm(1, 0, sd(zzs[, ll])) # Choose offset at random
+
+            zzs.offset <- cbind(zzs.offset, zzs[, ll] - offset)
+            offsets <- c(offsets, offset)
+        }
+
+        print(list(betas=betas, gammas=gammas, sigmas=sigmas, betases=betases, gammases=gammases, likeli=bestlikeli))
+        result = search.logspec.demeaned(dmyy, dmxxs, zzs.offset, kls, adm1, adm2, weights=weights, maxiter=1, betas=zoffset.adjust.betas(betas, offsets, kls, gammas), gammas=gammas, sigmas=sigmas, betases=zoffset.adjust.betas(betases, offsets, kls, gammas), gammases=gammases, bestlikeli=bestlikeli, skipmethod=5, eps=.01)
+        print(result)
+
+        ## Re-calculate with true zzs
+        readjusted.betas <- zoffset.adjust.betas(result$betas, -offsets, kls, result$gammas)
+        likeli <- calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, readjusted.betas, result$gammas, result$sigma, weights)
+
+        if (likeli > bestlikeli) {
+            print(paste("Improved!", likeli))
+
+            readjusted.betases <- zoffset.adjust.betas(result$betases, -offsets, kls, result$gammas)
+            if (likeli > bestlikeli + eps)
+                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter-1, betas=readjusted.betas, gammas=result$gammas, sigmas=result$sigmas, betases=readjusted.betases, gammases=result$gammases, bestlikeli=likeli, skipmethod=5, eps=eps))
+            else {
+                betas <- readjusted.betas
+                gammas <- result$gammas
+                sigmas <- result$sigmas
+                betases <- readjusted.betases
+                gammases <- result$gammases
+                bestlikeli <- likeli
+            }
+        }
+    }
+
     list(betas=betas, gammas=gammas, sigmas=sigmas, betases=betases, gammases=gammases, likeli=bestlikeli)
+}
+
+zoffset.adjust.betas <- function(betas, offsets, kls, gammas) {
+    gammas.so.far <- 0 # Keep track of how many coefficients used
+
+    for (kk in 1:nrow(kls)) {
+        gammas.here <- sum(kls[kk, ])
+        if (gammas.here == 0)
+            next # Nothing to do
+
+        mygammas <- gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)]
+        gammas.so.far <- gammas.so.far + gammas.here
+        betas[kk] <- betas[kk] * exp(sum(offsets[kls[kk, ]] * mygammas))
+    }
+
+    betas
 }

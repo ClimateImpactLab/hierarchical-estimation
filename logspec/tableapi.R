@@ -43,14 +43,14 @@ ta.estimate.vcv <- function(betas, gammas, sigmas, df, outname, adm1name, adm2na
     estimate.vcv(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, adm2, ...)
 }
 
-ta.rsqr <- function(fit, df, outname, adm1name, adm2name, prednames, covarnames) {
+ta.rsqr <- function(fit, df, outname, adm1name, adm2name, prednames, covarnames, weights=1) {
     list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
 
-    rsqr(yy, xxs, zzs, kls, adm1, adm2, fit$betas, fit$gammas)
+    rsqr(yy, xxs, zzs, kls, adm1, adm2, fit$betas, fit$gammas, weights)
 }
 
-ta.rsqr.projected <- function(fit, df, outname, adm1name, adm2name, prednames, covarnames) {
+ta.rsqr.projected <- function(fit, df, outname, adm1name, adm2name, prednames, covarnames, weights=1) {
     list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
 
-    rsqr.projected(yy, xxs, zzs, kls, adm1, adm2, fit$betas, fit$gammas)
+    rsqr.projected(yy, xxs, zzs, kls, adm1, adm2, fit$betas, fit$gammas, weights)
 }
