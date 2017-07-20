@@ -3,6 +3,7 @@ source("search.R")
 
 ta.arguments <- function(df, outname, adm1name, adm2name, prednames, covarnames) {
     yy <- df[, outname]
+
     adm1 <- as.numeric(factor(df[, adm1name]))
     adm2 <- as.numeric(factor(paste(df[, adm1name], df[, adm2name], sep=', ')))
 
@@ -40,4 +41,10 @@ ta.estimate.logspec <- function(df, outname, adm1name, adm2name, prednames, cova
 ta.estimate.vcv <- function(betas, gammas, sigmas, df, outname, adm1name, adm2name, prednames, covarnames, ...) {
     list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
     estimate.vcv(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, adm2, ...)
+}
+
+ta.rsqr <- function(fit, df, outname, adm1name, adm2name, prednames, covarnames) {
+    list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
+
+    rsqr(yy, xxs, zzs, kls, adm1, adm2, fit$betas, fit$gammas)
 }

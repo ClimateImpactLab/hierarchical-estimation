@@ -2,7 +2,7 @@
 
 ## Calculate the log likelihood, computing ADM1 sigmas from residuals
 calc.likeli.nosigma <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, weights) {
-    dmyy.exp <- calc.expected.demeaned(dmxxs, dmyy, zzs, kls, mm, betas, gammas)
+    dmyy.exp <- calc.expected.demeaned(dmxxs, zzs, kls, mm, betas, gammas)
 
     sigmas <- c()
     for (jj in unique(mm)) {

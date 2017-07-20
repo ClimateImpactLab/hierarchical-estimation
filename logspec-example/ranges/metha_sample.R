@@ -12,7 +12,7 @@ result <- estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                            df$adm1, df$adm2)
 
 calc.likeli.nosigma <- function(K, L, dmxxs, dmyy, zzs, mm, betas, gammas) {
-    dmyy.exp <- calc.expected.demeaned(K, L, dmxxs, dmyy, zzs, mm, betas, gammas)
+    dmyy.exp <- calc.expected.demeaned(K, L, dmxxs, zzs, mm, betas, gammas)
 
     sigmas <- c()
     for (jj in unique(mm)) {

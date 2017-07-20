@@ -4,7 +4,7 @@ library(nnls)
 
 do.checks <- F
 
-calc.expected.demeaned <- function(K, dmxx, dmyy, zz, mm, betas, gammas) {
+calc.expected.demeaned <- function(K, dmxx, zz, mm, betas, gammas) {
     obsmean <- 0
     for (kk in 1:K)
         obsmean <- obsmean + betas[kk] * dmxx[kk, ] * exp(zz[kk, , ] %*% gammas[kk, ])
@@ -13,7 +13,7 @@ calc.expected.demeaned <- function(K, dmxx, dmyy, zz, mm, betas, gammas) {
 }
 
 calc.likeli.demeaned <- function(K, dmxx, dmyy, zz, mm, betas, gammas, sigma) {
-    obsmean <- calc.expected.demeaned(K, dmxx, dmyy, zz, mm, betas, gammas)
+    obsmean <- calc.expected.demeaned(K, dmxx, zz, mm, betas, gammas)
     sum(dnorm(dmyy, obsmean, sigma[mm], log=T))
 }
 

@@ -1,0 +1,38 @@
+logspec.get.fe <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas) {
+    list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
+
+    pred.yy <- calc.expected.demeaned(xxs, zzs, kls, adm1, betas, gammas) # Okay that not demeaned here
+
+    fes <- list()
+    for (region in unique(adm2)) {
+        regioniis <- which(adm2 == region)
+        fes[[region]] <- mean(yy[regioniis] - pred.yy[regioniis])
+    }
+
+    fes
+}
+
+logspec.predict <- function(xxs, zzs, kls, adm1, adm2, fes, betas, gammas) {
+    list2env(check.arguments(rep(0, nrow(xxs)), xxs, zzs, kls, adm1, adm2), environment())
+
+    yy <- calc.expected.demeaned(xxs, zzs, kls, adm1, betas, gammas)
+
+    for (region in unique(adm2)) {
+        regioniis <- which(adm2 == region)
+        yy[regioniis] <- yy[regioniis] + fes[[region]]
+    }
+
+    yy
+}
+
+rsqr.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, betas, gammas) {
+    dmyy.pred <- calc.expected.demeaned(dmxxs, zzs, kls, adm1, betas, gammas)
+    1 - sum((dmyy - dmyy.pred)^2) / sum(dmyy^2)
+}
+
+rsqr <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas) {
+    fes <- logspec.get.fe(yy, xxs, zzs, kls, adm1, adm2, betas, gammas)
+    yy.pred <- logspec.predict(xxs, zzs, kls, adm1, adm2, fes, betas, gammas)
+
+    1 - sum((yy - yy.pred)^2) / sum((yy - mean(yy))^2)
+}

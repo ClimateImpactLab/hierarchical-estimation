@@ -38,8 +38,10 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
         if (-result$value > bestlikeli) {
             print(paste("Improved!", -result$value))
 
+            betas <- stacked.betas(K, L, result$par, dmyy, dmxxs, zzs, kls, adm1, weights)
+
             if (-result$value > bestlikeli + eps)
-                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter-1, betas=NULL, gammas=result$par, sigmas=NULL, betases=betases, gammases=gammases, bestlikeli=-result$value, skipmethod=2, eps=eps))
+                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter-1, betas=betas, gammas=result$par, sigmas=sigmas, betases=betases, gammases=gammases, bestlikeli=-result$value, skipmethod=2, eps=eps))
             else {
                 gammas <- result$par
                 bestlikeli <- -result$value
@@ -89,9 +91,6 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
             ## Since only 1 seed, average with existing ses
             betases <- (betases + apply(result$betas[101:600,], 2, sd)) / 2
             gammases <- (gammases + apply(result$gammas[101:600,], 2, sd)) / 2
-
-            print(betases)
-            print(gammases)
 
             if (result$best.likeli > bestlikeli + eps)
                 return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter-1, betas=result$betas[result$best.index,], gammas=result$gammas[result$best.index,], sigmas=sigmas, betases=betases, gammases=gammases, bestlikeli=result$best.likeli, skipmethod=4, eps=eps))

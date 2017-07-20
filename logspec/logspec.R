@@ -19,7 +19,7 @@ calc.covariated.predictors <- function(dmxxs, zzs, kls, mm, gammas) {
 }
 
 ## Calculate the expected value, after it has been demeaned
-calc.expected.demeaned <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas) {
+calc.expected.demeaned <- function(dmxxs, zzs, kls, mm, betas, gammas) {
     covariated.predictors <- calc.covariated.predictors(dmxxs, zzs, kls, mm, gammas)
 
     obsmean <- 0
@@ -31,7 +31,7 @@ calc.expected.demeaned <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas) {
 
 ## Calculate the likelihood of the given parameters, after observations have been demeaned
 calc.likeli.demeaned <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigma, weights) {
-    obsmean <- calc.expected.demeaned(dmxxs, dmyy, zzs, kls, mm, betas, gammas)
+    obsmean <- calc.expected.demeaned(dmxxs, zzs, kls, mm, betas, gammas)
     sum(weights * dnorm(dmyy, obsmean, sigma[mm], log=T))
 }
 
@@ -350,3 +350,4 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, w
 source("methast.R")
 source("ranges.R")
 source("gradient.R")
+source("predict.R")

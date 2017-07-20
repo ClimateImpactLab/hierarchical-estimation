@@ -1,5 +1,5 @@
 calc.gamma.gradient <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigmas, weights) {
-    obsmean <- calc.expected.demeaned(dmxxs, dmyy, zzs, kls, mm, betas, gammas)
+    obsmean <- calc.expected.demeaned(dmxxs, zzs, kls, mm, betas, gammas)
 
     klcombos <- which(kls, arr.ind=T)
 
