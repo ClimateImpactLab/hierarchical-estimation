@@ -35,7 +35,10 @@ rsqr <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas, weights=1) {
     fes <- logspec.get.fe(yy, xxs, zzs, kls, adm1, adm2, betas, gammas)
     yy.pred <- logspec.predict(xxs, zzs, kls, adm1, adm2, fes, betas, gammas)
 
-    1 - sum(weights * (yy - yy.pred)^2) / sum(weights * (yy - weighted.mean(yy, weights))^2)
+    if (length(weights) == 1)
+        return(1 - sum((yy - yy.pred)^2) / sum((yy - mean(yy))^2))
+    else
+        return(1 - sum(weights * (yy - yy.pred)^2) / sum(weights * (yy - weighted.mean(yy, weights))^2))
 }
 
 rsqr.projected <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas, weights=1) {

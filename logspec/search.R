@@ -119,9 +119,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
             offsets <- c(offsets, offset)
         }
 
-        print(list(betas=betas, gammas=gammas, sigmas=sigmas, betases=betases, gammases=gammases, likeli=bestlikeli))
         result = search.logspec.demeaned(dmyy, dmxxs, zzs.offset, kls, adm1, adm2, weights=weights, maxiter=1, betas=zoffset.adjust.betas(betas, offsets, kls, gammas), gammas=gammas, sigmas=sigmas, betases=zoffset.adjust.betas(betases, offsets, kls, gammas), gammases=gammases, bestlikeli=bestlikeli, skipmethod=5, eps=.01)
-        print(result)
 
         ## Re-calculate with true zzs
         readjusted.betas <- zoffset.adjust.betas(result$betas, -offsets, kls, result$gammas)
