@@ -30,9 +30,21 @@ calc.expected.demeaned <- function(dmxxs, zzs, kls, mm, betas, gammas) {
 }
 
 ## Calculate the likelihood of the given parameters, after observations have been demeaned
-calc.likeli.demeaned <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigma, weights) {
+calc.likeli.demeaned <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigma, weights, gammaprior) {
     obsmean <- calc.expected.demeaned(dmxxs, zzs, kls, mm, betas, gammas)
-    sum(weights * dnorm(dmyy, obsmean, sigma[mm], log=T))
+    sum(weights * dnorm(dmyy, obsmean, sigma[mm], log=T)) + gammaprior(gammas)
+}
+
+## Standard Gaussian gamma prior
+gaussian.gammaprior <- function(taus) {
+    function(gammas) {
+        ##print(c(gammas, taus))
+        sum(dnorm(gammas, 0, taus, log=T))
+    }
+}
+
+noninformative.gammaprior <- function(gammas) {
+    0
 }
 
 ## Demean a set of values by region (partial out region fixed effects)
@@ -91,19 +103,20 @@ demean.yxs <- function(K, yy, xxs, adm2) {
 }
 
 ## Estimate the parameters of the log specification
-estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1000, initgammas=NULL) {
+estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1000, initgammas=NULL, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
     list2env(demean.yxs(K, yy, xxs, adm2), environment())
 
-    estimate.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter, initgammas=initgammas)
+    estimate.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter, initgammas=initgammas, gammaprior=gammaprior)
 }
 
-estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1, maxiter=1000, initgammas=NULL) {
+estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1, maxiter=1000, initgammas=NULL, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1, adm2), environment())
 
     dmxxs.orig <- dmxxs
 
-    print("Iterating...")
+    if (maxiter > 1)
+        print("Iterating...")
 
     bestlikeli <- -Inf # best likelihood we've seen
     bestgammas <- rep(0, sum(kls)) # gammas corresponding to bestlikeli
@@ -145,7 +158,7 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights
             adm1.sigma <- (bestsigmas + armijo.factor * adm1.sigma) / (1 + armijo.factor)
         }
 
-        likeli1 <- calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, adm1.sigma, weights)
+        likeli1 <- calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, adm1.sigma, weights, gammaprior)
 
         ## Check if we have converged
         if (abs(likeli1 - bestlikeli) < 1e-6 || armijo.factor < 1e-6)
@@ -178,6 +191,8 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights
         stage1.logbetas[stage1.logbetas == -Inf] <- NA
 
         ## Second stage regression for each predictor
+        old.betas <- betas
+        old.gammas <- gammas
         betas <- rep(NA, K)
         gammas <- rep(NA, sum(kls))
 
@@ -189,6 +204,13 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights
             if (gammas.here == 0)
                 next
 
+            if (sum(valid) < gammas.here) {
+                betas[kk] <- old.betas[kk]
+                gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)] <- old.gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)]
+                gammas.so.far <- gammas.so.far + gammas.here
+                next
+            }
+
             yy.modkk <- stage1.logbetas[valid, kk]
             xx.modkk <- as.matrix(cbind(rep(1, sum(valid)), zzs[valid, kls[kk, ]]))
             modkk <- lm(yy.modkk ~ 0 + xx.modkk)
@@ -199,7 +221,7 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights
             gammas.so.far <- gammas.so.far + gammas.here
         }
 
-        likeli2 <- calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, adm1.sigma, weights)
+        likeli2 <- calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, adm1.sigma, weights, gammaprior)
 
         ## Report progress
         print(c(iter, log2(1/armijo.factor), as.integer(max(likeli1, likeli2))))
@@ -260,14 +282,14 @@ stacked.betas <- function(K, L, gammas, dmyy, dmxxs.orig, zzs, kls, mm, weights)
 }
 
 ## Estimate the maximum likelihood, using R's optim function
-estimate.logspec.optim <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, initgammas=NULL) {
+estimate.logspec.optim <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, initgammas=NULL, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
     list2env(demean.yxs(K, yy, xxs, adm2), environment())
 
-    estimate.logspec.optim.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, initgammas=initgammas)
+    estimate.logspec.optim.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, initgammas=initgammas, gammaprior=gammaprior)
 }
 
-estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1, initgammas=NULL) {
+estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1, initgammas=NULL, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1, adm2), environment())
     dmxxs.orig <- dmxxs
 
@@ -288,7 +310,7 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, w
         sigma <- sd(stacked$residuals)
     }
 
-    print(c("Step 1:", calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, rep(sigma, M), weights)))
+    print(c("Step 1:", calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, rep(sigma, M), weights, gammaprior)))
 
     ## Approximation 2: Identically distributed
     objective <- function(params) {
@@ -297,7 +319,7 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, w
 
         betas <- stacked.betas(K, L, gammas, dmyy, dmxxs.orig, zzs, kls, adm1, weights)
 
-        -calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights)
+        -calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights, gammaprior)
     }
 
     params <- c(gammas, sigma)
@@ -308,7 +330,7 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, w
 
     betas <- stacked.betas(K, L, gammas, dmyy, dmxxs.orig, zzs, kls, adm1, weights)
 
-    print(c("Step 2:", calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, rep(sigma, M), weights)))
+    print(c("Step 2:", calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, rep(sigma, M), weights, gammaprior)))
 
     ## Approximation 3: State-clustered errors
     dmxxs <- calc.covariated.predictors(dmxxs.orig, zzs, kls, adm1, gammas)
@@ -323,7 +345,17 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, w
     for (jj in 1:M)
         sigma <- c(sigma, sd(stacked$residuals[adm1 == jj]))
 
-    print(c("Step 3:", calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights)))
+    print(c("Step 3:", calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights, gammaprior)))
+
+    result <- estimate.logspec.optim.step4(dmyy, dmxxs.orig, zzs, kls, adm1, adm2, soln$par[1:sum(kls)], sigma, weights=weights, gammaprior=gammaprior)
+
+    print(c("Step 4:", calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights, gammaprior)))
+
+    result
+}
+
+estimate.logspec.optim.step4 <- function(dmyy, dmxxs.orig, zzs, kls, adm1, adm2, gammas, sigma, weights=1, gammaprior=noninformative.gammaprior) {
+    list2env(check.arguments(dmyy, dmxxs.orig, zzs, kls, adm1, adm2), environment())
 
     objective2 <- function(params) {
         gammas <- params[1:sum(kls)]
@@ -331,18 +363,16 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, w
 
         betas <- stacked.betas(K, L, gammas, dmyy, dmxxs.orig, zzs, kls, adm1, weights)
 
-        -calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights)
+        -calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights, gammaprior)
     }
 
-    params <- c(soln$par[1:sum(kls)], sigma)
+    params <- c(gammas, sigma)
     soln <- optim(params, objective2)
 
     gammas <- soln$par[1:sum(kls)]
     sigma <- soln$par[(sum(kls)+1):length(soln$par)]
 
     betas <- stacked.betas(K, L, gammas, dmyy, dmxxs.orig, zzs, kls, adm1, weights)
-
-    print(c("Step 4:", calc.likeli.demeaned(dmxxs.orig, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights)))
 
     list(betas=betas, gammas=gammas, sigma=sigma)
 }

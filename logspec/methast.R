@@ -68,15 +68,15 @@ repeated.methast <- function(seeds, iter, warmup, param0, sd0, likeli, verbose=N
     list(params=params, best.param=param0)
 }
 
-parallel.single.methast <- function(prefix, seed, betas, gammas, betaerr, gammaerr, yy, xxs, zzs, adm1, adm2, weights=1, iter=600, warmup=100) {
+parallel.single.methast <- function(prefix, seed, betas, gammas, betaerr, gammaerr, yy, xxs, zzs, adm1, adm2, weights=1, iter=600, warmup=100, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
     list2env(demean.yxs(yy, xxs, adm2), parent.frame())
 
-    methast.result <- methast.betagamma(K, L, dmxxs, dmyy, zzs, adm1, iter, betas, gammas, betaerr, gammaerr, weights)
+    methast.result <- methast.betagamma(K, L, dmxxs, dmyy, zzs, adm1, iter, betas, gammas, betaerr, gammaerr, weights, gammaprior=gammaprior)
     save(methast.result, file=paste0("MH-", prefix, seed, ".RData"))
 }
 
-parallel.combine.methast <- function(prefix, seeds, yy, xxs, zzs, adm1, adm2, weights=1, iter=600, warmup=100) {
+parallel.combine.methast <- function(prefix, seeds, yy, xxs, zzs, adm1, adm2, weights=1, iter=600, warmup=100, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
     list2env(demean.yxs(yy, xxs, adm2), parent.frame())
 
@@ -96,7 +96,7 @@ parallel.combine.methast <- function(prefix, seeds, yy, xxs, zzs, adm1, adm2, we
         betas <- rbind(betas, methast.result$betas[(warmup+1):iter,])
         gammas <- rbind(gammas, methast.result$gammas[(warmup+1):iter,])
 
-        this.likeli <- calc.likeli.nosigma(K, L, dmxxs, dmyy, zzs, adm1, methast.result$betas[methast.result$best.index,], matrix(methast.result$gammas[methast.result$best.index,], K, L), weights)
+        this.likeli <- calc.likeli.nosigma(K, L, dmxxs, dmyy, zzs, adm1, methast.result$betas[methast.result$best.index,], matrix(methast.result$gammas[methast.result$best.index,], K, L), weights, gammaprior)
         if (this.likeli > best.likeli) {
             beta0 <- methast.result$betas[methast.result$best.index,]
             gamma0 <- matrix(methast.result$gammas[methast.result$best.index,], K, L)

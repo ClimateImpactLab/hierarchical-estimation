@@ -12,14 +12,16 @@ logspec.get.fe <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas) {
     fes
 }
 
-logspec.predict <- function(xxs, zzs, kls, adm1, adm2, fes, betas, gammas) {
+logspec.predict <- function(xxs, zzs, kls, adm1, adm2, betas, gammas, fes=NULL) {
     list2env(check.arguments(rep(0, nrow(xxs)), xxs, zzs, kls, adm1, adm2), environment())
 
     yy <- calc.expected.demeaned(xxs, zzs, kls, adm1, betas, gammas)
 
-    for (region in unique(adm2)) {
-        regioniis <- which(adm2 == region)
-        yy[regioniis] <- yy[regioniis] + fes[[region]]
+    if (!is.null(fes)) {
+        for (region in unique(adm2)) {
+            regioniis <- which(adm2 == region)
+            yy[regioniis] <- yy[regioniis] + fes[[region]]
+        }
     }
 
     yy
@@ -33,7 +35,7 @@ rsqr.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, betas, gammas, weig
 
 rsqr <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas, weights=1) {
     fes <- logspec.get.fe(yy, xxs, zzs, kls, adm1, adm2, betas, gammas)
-    yy.pred <- logspec.predict(xxs, zzs, kls, adm1, adm2, fes, betas, gammas)
+    yy.pred <- logspec.predict(xxs, zzs, kls, adm1, adm2, betas, gammas, fes)
 
     if (length(weights) == 1)
         return(1 - sum((yy - yy.pred)^2) / sum((yy - mean(yy))^2))

@@ -24,4 +24,4 @@ parallel.single.methast("example", seed, result$betas, result$gammas,
                         df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                         df[!duplicated(df$adm1), c('meant', 'log_gdppc', 'meant', 'log_gdppc',
                                                    'meant', 'log_gdppc', 'meant', 'log_gdppc')],
-                        df$adm1, df$adm2)
+                        df$adm1, df$adm2, gammaprior=gammaprior) # XXX: Define gammaprior

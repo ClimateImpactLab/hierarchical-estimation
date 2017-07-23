@@ -27,7 +27,7 @@ get.gamma.gradient <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas, sig
 }
 
 ## This uses numerical differentiation; it's a good comparison
-estimate.logspec.gammaoptim.nograd <- function(yy, xxs, zzs, kls, adm1, adm2, sigmas, weights=1, initgammas=NULL) {
+estimate.logspec.gammaoptim.nograd <- function(yy, xxs, zzs, kls, adm1, adm2, sigmas, weights=1, initgammas=NULL, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
     list2env(demean.yxs(K, yy, xxs, adm2), environment())
 
@@ -37,21 +37,21 @@ estimate.logspec.gammaoptim.nograd <- function(yy, xxs, zzs, kls, adm1, adm2, si
     objective <- function(gammas) {
         betas <- stacked.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
 
-        -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights)
+        -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, gammaprior)
     }
 
     optim(initgammas, objective)
 }
 
 # The same as above, but with gradients
-estimate.logspec.gammaoptim <- function(yy, xxs, zzs, kls, adm1, adm2, sigmas, weights=1, initgammas=NULL) {
+estimate.logspec.gammaoptim <- function(yy, xxs, zzs, kls, adm1, adm2, sigmas, weights=1, initgammas=NULL, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
     list2env(demean.yxs(K, yy, xxs, adm2), environment())
 
-    estimate.logspec.gammaoptim.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, sigmas, weights=weights, initgammas=initgammas)
+    estimate.logspec.gammaoptim.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, sigmas, weights=weights, initgammas=initgammas, gammaprior=gammaprior)
 }
 
-estimate.logspec.gammaoptim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, sigmas, weights=1, initgammas=NULL) {
+estimate.logspec.gammaoptim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, sigmas, weights=1, initgammas=NULL, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1, adm2), environment())
     if (is.null(initgammas))
         initgammas <- rep(0, sum(kls))
@@ -59,7 +59,7 @@ estimate.logspec.gammaoptim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, ad
     objective <- function(gammas) {
         betas <- stacked.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
 
-        -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights)
+        -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, gammaprior)
     }
 
     gradient <- function(gammas) {
@@ -70,4 +70,24 @@ estimate.logspec.gammaoptim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, ad
     }
 
     optim(initgammas, objective, gradient, method="BFGS")
+}
+
+## Determine \partial^2 f / \partial x \partial z, the marginal effect
+## of the interaction between x and z at given covariates
+marginal.interactions <- function(zz, kls, betas, gammas) {
+    marginals <- c()
+
+    for (kk in 1:length(betas)) {
+        gammas.here <- sum(kls[kk, ])
+        if (gammas.here == 0)
+            next # Nothing to do: already dmxxs[, kk]
+
+        gammas.so.far <- length(marginals)
+        mygammas <- gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)]
+
+        mymarginals <- betas[kk] * mygammas * exp(sum(zz[kls[kk, ]] * mygammas))
+        marginals <- c(marginals, mymarginals)
+    }
+
+    marginals
 }
