@@ -5,8 +5,15 @@ ta.arguments <- function(df, outname, adm1name, adm2name, prednames, covarnames)
     if (!is.null(outname))
         yy <- df[, outname]
 
-    adm1 <- as.numeric(factor(df[, adm1name]))
-    adm2 <- as.numeric(factor(paste(df[, adm1name], df[, adm2name], sep=', ')))
+    if (!is.null(adm1name))
+        adm1 <- as.numeric(factor(df[, adm1name]))
+    else
+        adm1 <- NULL
+
+    if (!is.null(adm2name))
+        adm2 <- as.numeric(factor(paste(df[, adm1name], df[, adm2name], sep=', ')))
+    else
+        adm2 <- NULL
 
     unipreds <- unique(prednames)
     unicovars <- unique(covarnames)
@@ -14,15 +21,23 @@ ta.arguments <- function(df, outname, adm1name, adm2name, prednames, covarnames)
         stop("One of the covariates must be '1' for each predictor.")
     unicovars <- unicovars[unicovars != '1'] # Drop this covariate
 
+    ## Fill in missing predictors
+    for (pred in unipreds)
+        if (!(pred %in% names(df)))
+            df[, pred] <- NA
+
     xxs <- df[, unipreds]
 
     ## Generate an order across representative rows
-    zzs.representatives <- !duplicated(adm1)
-    zzs.adm1 <- adm1[zzs.representatives]
-    zzs.adm1order <- c()
-    for (mm in 1:max(adm1))
-        zzs.adm1order <- c(zzs.adm1order, which(zzs.adm1 == mm))
-    zzs <- df[zzs.representatives, unicovars, drop=F][zzs.adm1order, , drop=F] # pull out, in order of adm1 numbers
+    if (!is.null(adm1name)) {
+        zzs.representatives <- !duplicated(adm1)
+        zzs.adm1 <- adm1[zzs.representatives]
+        zzs.adm1order <- c()
+        for (mm in 1:max(adm1))
+            zzs.adm1order <- c(zzs.adm1order, which(zzs.adm1 == mm))
+        zzs <- df[zzs.representatives, unicovars, drop=F][zzs.adm1order, , drop=F] # pull out, in order of adm1 numbers
+    } else
+        zzs <- df[, unicovars, drop=F]
 
     kls <- matrix(F, ncol(xxs), ncol(zzs))
     for (kk in 1:ncol(xxs))
@@ -43,15 +58,18 @@ ta.arguments <- function(df, outname, adm1name, adm2name, prednames, covarnames)
 }
 
 ## Wrapper on estimate.logspec
-ta.estimate.logspec <- function(df, outname, adm1name, adm2name, prednames, covarnames, weights=1, priorset='default') {
+ta.estimate.logspec <- function(df, outname, adm1name, adm2name, prednames, covarnames, weights=1, priorset='default', initset='match') {
     list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
 
     if (priorset == 'none')
         gammaprior <- noninformative.gammaprior
 
-    ## Create initial gammas based on OLS
-    print("Finding initial gamma values...")
-    initgammas <- ta.match.marginals(df, outname, adm1name, adm2name, prednames, covarnames, weights)
+    if (initset == 'match') {
+        ## Create initial gammas based on OLS
+        print("Finding initial gamma values...")
+        initgammas <- ta.match.marginals(df, outname, adm1name, adm2name, prednames, covarnames, weights)
+    } else
+        initgammas <- NULL
 
     search.logspec(yy, xxs, zzs, kls, adm1, adm2, weights=weights,
                    initgammas=initgammas, gammaprior=gammaprior)
@@ -67,6 +85,12 @@ ta.predict <- function(df, adm1name, adm2name, prednames, covarnames, betas, gam
     list2env(ta.arguments(df, NULL, adm1name, adm2name, prednames, covarnames), environment())
 
     logspec.predict(xxs, zzs, kls, adm1, adm2, betas, gammas, fes)
+}
+
+ta.predict.betas <- function(df, prednames, covarnames, betas, gammas) {
+    list2env(ta.arguments(df, NULL, NULL, NULL, prednames, covarnames), environment())
+
+    logspec.predict.betas(zzs, kls, betas, gammas)
 }
 
 ta.rsqr <- function(fit, df, outname, adm1name, adm2name, prednames, covarnames, weights=1) {
@@ -96,7 +120,7 @@ ta.ols <- function(df, outname, adm1name, adm2name, prednames, covarnames, weigh
 
     formula <- paste(formula, "|", adm2name, "| 0 |", adm1name)
 
-    felm(as.formula(formula), data=df)
+    felm(as.formula(formula), weights=weights, data=df)
 }
 
 ## From https://rdrr.io/github/skranz/regtools/src/R/felm.r
@@ -135,6 +159,29 @@ ta.ols.predict <- function(object, newdata, use.fe = TRUE,...) {
     as.vector(y.pred)
 }
 
+ta.ols.predict.betas <- function(df, prednames, covarnames, mod) {
+    list2env(ta.arguments(df, NULL, NULL, NULL, prednames, covarnames), environment())
+
+    gammaorder <- ta.gammaorder(prednames, covarnames)
+    betas <- mod$coeff[is.na(gammaorder)]
+    gammas <- rep(NA, sum(!is.na(gammaorder)))
+    gammas[gammaorder[!is.na(gammaorder)]] <- mod$coeff[!is.na(gammaorder)]
+
+    result <- matrix(betas, nrow(zzs), length(betas)) # Only modify this for predictors with covariates
+    gammas.so.far <- 0 # Keep track of how many coefficients used
+
+    for (kk in 1:nrow(kls)) {
+        gammas.here <- sum(kls[kk, ])
+        if (gammas.here == 0)
+            next # Nothing to do: already dmxxs[, kk]
+
+        mygammas <- gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)]
+        gammas.so.far <- gammas.so.far + gammas.here
+        result[, kk] <- betas[kk] + as.matrix(zzs[, kls[kk, ]]) %*% mygammas
+    }
+
+    result
+}
 
 ## Return the set of gamma indices that correspond to each predname-covarname combination
 ta.gammaorder <- function(prednames, covarnames) {
@@ -174,7 +221,7 @@ ta.gammaorder <- function(prednames, covarnames) {
 ta.match.marginals <- function(df, outname, adm1name, adm2name, prednames, covarnames, weights=1) {
     list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
 
     mod.ols <- ta.ols(df, outname, adm1name, adm2name, prednames, covarnames, weights)
     ## Pull out marginals in the right order

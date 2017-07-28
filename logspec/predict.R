@@ -27,6 +27,23 @@ logspec.predict <- function(xxs, zzs, kls, adm1, adm2, betas, gammas, fes=NULL) 
     yy
 }
 
+logspec.predict.betas <- function(zzs, kls, betas, gammas) {
+    result <- matrix(betas, nrow(zzs), length(betas)) # Only modify this for predictors with covariates
+    gammas.so.far <- 0 # Keep track of how many coefficients used
+
+    for (kk in 1:nrow(kls)) {
+        gammas.here <- sum(kls[kk, ])
+        if (gammas.here == 0)
+            next # Nothing to do: already dmxxs[, kk]
+
+        mygammas <- gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)]
+        gammas.so.far <- gammas.so.far + gammas.here
+        result[, kk] <- betas[kk] * exp(as.matrix(zzs[, kls[kk, ]]) %*% mygammas)
+    }
+
+    result
+}
+
 rsqr.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, betas, gammas, weights=1) {
     dmyy.pred <- calc.expected.demeaned(dmxxs, zzs, kls, adm1, betas, gammas) ## NOTE: should include weights, when change by ADM1
 
@@ -45,7 +62,7 @@ rsqr <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas, weights=1) {
 
 rsqr.projected <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas, weights=1) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
 
     rsqr.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, betas, gammas, weights)
 }

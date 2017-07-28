@@ -4,7 +4,7 @@ search.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=100
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
 
     print("Preparing for search...")
-    list2env(demean.yxs(K, yy, xxs, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
 
     search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter, gammas=initgammas, gammaprior=gammaprior)
 }
@@ -32,7 +32,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
         }
     }
 
-    if (skipmethod != 2) {
+    if (skipmethod != 2 && sum(kls) > 0) {
         print("Search: Gradient ascent")
         result <- estimate.logspec.gammaoptim.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, sigmas=sigmas, weights=weights, initgammas=gammas, gammaprior=gammaprior)
         if (-result$value > bestlikeli) {
@@ -108,7 +108,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
         }
     }
 
-    if (skipmethod != 5) {
+    if (skipmethod != 5 && sum(kls) > 0) {
         print("Recentering covariates")
 
         ## Decide on offsets

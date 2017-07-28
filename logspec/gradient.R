@@ -21,7 +21,7 @@ calc.gamma.gradient <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigmas
 
 get.gamma.gradient <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas, sigmas, weights=1) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
 
     calc.gamma.gradient(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights)
 }
@@ -29,7 +29,7 @@ get.gamma.gradient <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas, sig
 ## This uses numerical differentiation; it's a good comparison
 estimate.logspec.gammaoptim.nograd <- function(yy, xxs, zzs, kls, adm1, adm2, sigmas, weights=1, initgammas=NULL, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
 
     if (is.null(initgammas))
         initgammas <- rep(0, sum(kls))
@@ -46,7 +46,7 @@ estimate.logspec.gammaoptim.nograd <- function(yy, xxs, zzs, kls, adm1, adm2, si
 # The same as above, but with gradients
 estimate.logspec.gammaoptim <- function(yy, xxs, zzs, kls, adm1, adm2, sigmas, weights=1, initgammas=NULL, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
 
     estimate.logspec.gammaoptim.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, sigmas, weights=weights, initgammas=initgammas, gammaprior=gammaprior)
 }

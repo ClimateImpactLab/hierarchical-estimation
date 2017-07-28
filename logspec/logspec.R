@@ -38,7 +38,6 @@ calc.likeli.demeaned <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigma
 ## Standard Gaussian gamma prior
 gaussian.gammaprior <- function(taus) {
     function(gammas) {
-        ##print(c(gammas, taus))
         sum(dnorm(gammas, 0, taus, log=T))
     }
 }
@@ -48,10 +47,17 @@ noninformative.gammaprior <- function(gammas) {
 }
 
 ## Demean a set of values by region (partial out region fixed effects)
-regional.demean <- function(values, regions) {
-    for (region in unique(regions)) {
-        regioniis <- which(regions == region)
-        values[regioniis] <- values[regioniis] - mean(values[regioniis])
+regional.demean <- function(values, regions, weights) {
+    if (length(weights) == 1) {
+        for (region in unique(regions)) {
+            regioniis <- which(regions == region)
+            values[regioniis] <- values[regioniis] - mean(values[regioniis])
+        }
+    } else {
+        for (region in unique(regions)) {
+            regioniis <- which(regions == region)
+            values[regioniis] <- values[regioniis] - weighted.mean(values[regioniis], weights[regioniis])
+        }
     }
 
     values
@@ -92,12 +98,12 @@ check.arguments <- function(yy, xxs, zzs, kls, adm1, adm2) {
 }
 
 ## Demean all observations by ADM2 regions (partial out ADM2 fixed effects)
-demean.yxs <- function(K, yy, xxs, adm2) {
+demean.yxs <- function(K, yy, xxs, adm2, weights) {
     ## De-mean observations
-    dmyy <- regional.demean(yy, adm2)
+    dmyy <- regional.demean(yy, adm2, weights)
     dmxxs <- xxs
     for (kk in 1:K)
-        dmxxs[, kk] <- regional.demean(dmxxs[, kk], adm2)
+        dmxxs[, kk] <- regional.demean(dmxxs[, kk], adm2, weights)
 
     list(dmyy=dmyy, dmxxs=as.matrix(dmxxs))
 }
@@ -105,7 +111,7 @@ demean.yxs <- function(K, yy, xxs, adm2) {
 ## Estimate the parameters of the log specification
 estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1000, initgammas=NULL, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
 
     estimate.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter, initgammas=initgammas, gammaprior=gammaprior)
 }
@@ -201,8 +207,10 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights
             valid <- is.finite(stage1.logbetas[, kk])
 
             gammas.here <- sum(kls[kk, ])
-            if (gammas.here == 0)
+            if (gammas.here == 0) {
+                betas[kk] <- exp(mean(stage1.logbetas[valid, kk], na.rm=T)) * sign(stacked$coeff[kk])
                 next
+            }
 
             if (sum(valid) < gammas.here) {
                 betas[kk] <- old.betas[kk]
@@ -248,11 +256,14 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights
 
         ## Setup for next iteration
         dmxxs <- calc.covariated.predictors(dmxxs.orig, zzs, kls, adm1, gammas)
-        for (jj in 1:M) {
-            included <- adm1 == jj
-            dmyy.weighted[included] <- dmyy[included] / adm1.sigma[jj]
-            dmxxs.weighted[included,] <- dmxxs[included,] / adm1.sigma[jj]
-        }
+        ## XXX: Remove this for comparison to OLS
+        ## for (jj in 1:M) {
+        ##     included <- adm1 == jj
+        ##     dmyy.weighted[included] <- dmyy[included] / adm1.sigma[jj]
+        ##     dmxxs.weighted[included,] <- dmxxs[included,] / adm1.sigma[jj]
+        ## }
+        dmyy.weighted <- dmyy
+        dmxxs.weighted <- dmxxs
 
         dmyy.weighted <- dmyy.weighted * sqrt(weights)
         for (kk in 1:K)
@@ -284,7 +295,7 @@ stacked.betas <- function(K, L, gammas, dmyy, dmxxs.orig, zzs, kls, mm, weights)
 ## Estimate the maximum likelihood, using R's optim function
 estimate.logspec.optim <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, initgammas=NULL, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
 
     estimate.logspec.optim.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, initgammas=initgammas, gammaprior=gammaprior)
 }

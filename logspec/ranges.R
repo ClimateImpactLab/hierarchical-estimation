@@ -45,7 +45,10 @@ methast.betagamma.sigma <- function(K, L, dmxxs, dmyy, zzs, kls, mm, iter, beta0
     likelifunc <- make.methast.betagamma.sigma.likeli(K, L, dmxxs, dmyy, zzs, kls, mm, sigmas, weights, gammaprior)
     result <- methast(iter, c(beta0, gamma0), c(betaerr, gammaerr), likelifunc)
 
-    list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+sum(kls))], best.likeli=likelifunc(result$params[result$best.index,]), best.index=result$best.index)
+    if (sum(kls) > 0)
+        list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+sum(kls))], best.likeli=likelifunc(result$params[result$best.index,]), best.index=result$best.index)
+    else
+        list(betas=result$params[, 1:K], gammas=matrix(NA, nrow(result$params), 0), best.likeli=likelifunc(result$params[result$best.index,]), best.index=result$best.index)
 }
 
 ## Use Metropolis-Hastings with N seeds
@@ -130,7 +133,7 @@ serr.conservative <- function(vcv.ols, params) {
 
 estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T, weights=1, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
 
     if (use.ols) {
         vcv.start <- tryCatch({
@@ -163,7 +166,7 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, adm2, i
 
 estimate.se <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T, weights=1, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2), environment())
+    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
 
     if (use.ols) {
         vcv.start <- tryCatch({

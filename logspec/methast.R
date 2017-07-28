@@ -70,7 +70,7 @@ repeated.methast <- function(seeds, iter, warmup, param0, sd0, likeli, verbose=N
 
 parallel.single.methast <- function(prefix, seed, betas, gammas, betaerr, gammaerr, yy, xxs, zzs, adm1, adm2, weights=1, iter=600, warmup=100, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
-    list2env(demean.yxs(yy, xxs, adm2), parent.frame())
+    list2env(demean.yxs(yy, xxs, adm2, weights), parent.frame())
 
     methast.result <- methast.betagamma(K, L, dmxxs, dmyy, zzs, adm1, iter, betas, gammas, betaerr, gammaerr, weights, gammaprior=gammaprior)
     save(methast.result, file=paste0("MH-", prefix, seed, ".RData"))
@@ -78,7 +78,7 @@ parallel.single.methast <- function(prefix, seed, betas, gammas, betaerr, gammae
 
 parallel.combine.methast <- function(prefix, seeds, yy, xxs, zzs, adm1, adm2, weights=1, iter=600, warmup=100, gammaprior=noninformative.gammaprior) {
     list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
-    list2env(demean.yxs(yy, xxs, adm2), parent.frame())
+    list2env(demean.yxs(yy, xxs, adm2, weights), parent.frame())
 
     betas <- matrix(NA, 0, K)
     gammas <- matrix(NA, 0, K*L)
