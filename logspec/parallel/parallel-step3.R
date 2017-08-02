@@ -11,6 +11,6 @@ methast.result <- parallel.combine.methast("example", 10,
                                            df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                                            df[!duplicated(df$adm1), c('meant', 'log_gdppc', 'meant', 'log_gdppc',
                                                                       'meant', 'log_gdppc', 'meant', 'log_gdppc')],
-                                           df$adm1, df$adm2, gammaprior) # need to define gammaprior
+                                           df$adm1, df$adm2, prior) # need to define prior
 
 save(methast.result, file=paste0("MH-combined.RData"))

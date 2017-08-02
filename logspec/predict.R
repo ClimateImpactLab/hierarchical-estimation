@@ -28,7 +28,7 @@ logspec.predict <- function(xxs, zzs, kls, adm1, adm2, betas, gammas, fes=NULL) 
 }
 
 logspec.predict.betas <- function(zzs, kls, betas, gammas) {
-    result <- matrix(betas, nrow(zzs), length(betas)) # Only modify this for predictors with covariates
+    result <- t(matrix(betas, length(betas), nrow(zzs))) # Only modify this for predictors with covariates
     gammas.so.far <- 0 # Keep track of how many coefficients used
 
     for (kk in 1:nrow(kls)) {
@@ -38,7 +38,7 @@ logspec.predict.betas <- function(zzs, kls, betas, gammas) {
 
         mygammas <- gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)]
         gammas.so.far <- gammas.so.far + gammas.here
-        result[, kk] <- betas[kk] * exp(as.matrix(zzs[, kls[kk, ]]) %*% mygammas)
+        result[, kk] <- betas[kk] * exp(as.matrix(zzs[, kls[kk, ], drop=F]) %*% mygammas)
     }
 
     result

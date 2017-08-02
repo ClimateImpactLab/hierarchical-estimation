@@ -51,9 +51,10 @@ ta.arguments <- function(df, outname, adm1name, adm2name, prednames, covarnames)
         taus <- c()
         for (kk in 1:nrow(kls))
             taus <- c(taus, zzs.taus[kls[kk, ]])
-        gammaprior <- gaussian.gammaprior(taus)
+        prior <- gaussian.prior(taus)
+        gammapriorderiv <- gaussian.gammapriorderiv(taus)
 
-        list(yy=yy, adm1=adm1, adm2=adm2, xxs=xxs, zzs=zzs, kls=kls, gammaprior=gammaprior)
+        list(yy=yy, adm1=adm1, adm2=adm2, xxs=xxs, zzs=zzs, kls=kls, prior=prior, gammapriorderiv=gammapriorderiv)
     }
 }
 
@@ -61,24 +62,66 @@ ta.arguments <- function(df, outname, adm1name, adm2name, prednames, covarnames)
 ta.estimate.logspec <- function(df, outname, adm1name, adm2name, prednames, covarnames, weights=1, priorset='default', initset='match') {
     list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
 
-    if (priorset == 'none')
-        gammaprior <- noninformative.gammaprior
+    ## Variables used by ta.match.marginals (can stay NULL)
+    meanzz <- NULL
+    meanbetas <- NULL
+
+    ## Pass to search
+    known.betas.info <- NULL
+
+    if (priorset == 'none') {
+        prior <- noninformative.prior
+        gammapriorderiv <- noninformative.gammapriorderiv
+    } else if (priorset == 'default' || priorset == 'betaprior') {
+        ## Determine mean betas
+        mod <- ta.ols(df, outname, adm1name, adm2name, prednames, covarnames, weights=weights)
+        meanzz <- get.meanzz(df, covarnames, weights)
+        meanbetas <- ta.ols.predict.betas(as.data.frame(t(meanzz)), prednames, covarnames, mod)[1,]
+
+        if (priorset == 'betaprior') {
+            require(mvtnorm)
+
+            betaindices <- sapply(unique(prednames), function(pred) which(prednames == pred & covarnames == '1'))
+            meanbetavcv <- mod$robustvcv[betaindices, betaindices]
+            invmeanbetavcv <- solve(meanbetavcv)
+
+            gaussprior <- prior # prior set by ta.arguments
+            gaussgammapriorderiv <- gammapriorderiv
+
+            prior <- function(betas, gammas) {
+                obsbetas <- ta.predict.betas(meanzz, prednames, covarnames, betas, gammas)
+                dmvnorm(obsbetas, meanbetas, meanbetavcv, log=T) + gaussprior(betas, gammas)
+            }
+
+            gammapriorderiv <- function(gammas) {
+                ## Need d obj / d gamma = (d obj / d beta) (d beta / d gamma)
+                d.dbetas <- invmeanbetavcv %*% (obsbetas - meanbetas) # Kx1
+                dbetas.dgammas <- kls * t(matrix(meanzz, length(meanzz), nrow(kls))) # KxL
+                t(d.dbetas) %*% dbetas.dgammas + gausspriorderiv(betas, gammas)
+            }
+        } else {
+            ## By default, force betas to match at zz0
+            known.betas.info <- list(zz0=meanzz, betas0=meanbetas)
+        }
+    }
 
     if (initset == 'match') {
         ## Create initial gammas based on OLS
         print("Finding initial gamma values...")
-        initgammas <- ta.match.marginals(df, outname, adm1name, adm2name, prednames, covarnames, weights)
+        initgammas <- ta.match.marginals(df, outname, adm1name, adm2name, prednames, covarnames, zz0=meanzz, betas0=meanbetas, weights)
+        print(initgammas)
     } else
         initgammas <- NULL
 
     search.logspec(yy, xxs, zzs, kls, adm1, adm2, weights=weights,
-                   initgammas=initgammas, gammaprior=gammaprior)
+                   initgammas=initgammas, prior=prior,
+                   gammapriorderiv=gammapriorderiv, known.betas.info=known.betas.info)
 }
 
 ## Wrapper on estimate.vcv
 ta.estimate.vcv <- function(betas, gammas, sigmas, df, outname, adm1name, adm2name, prednames, covarnames, ...) {
     list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
-    estimate.vcv(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, adm2, gammaprior=gammaprior, ...)
+    estimate.vcv(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, adm2, prior=prior, ...)
 }
 
 ta.predict <- function(df, adm1name, adm2name, prednames, covarnames, betas, gammas, fes=NULL) {
@@ -120,7 +163,10 @@ ta.ols <- function(df, outname, adm1name, adm2name, prednames, covarnames, weigh
 
     formula <- paste(formula, "|", adm2name, "| 0 |", adm1name)
 
-    felm(as.formula(formula), weights=weights, data=df)
+    if (length(weights) == 1)
+        felm(as.formula(formula), data=df)
+    else
+        felm(as.formula(formula), weights=weights, data=df)
 }
 
 ## From https://rdrr.io/github/skranz/regtools/src/R/felm.r
@@ -131,12 +177,12 @@ ta.ols.predict <- function(object, newdata, use.fe = TRUE,...) {
     ## model matrix without intercept
     mm = model.matrix(object = object,data = newdata)
 
-    if (NROW(mm)<NROW(newdata)) {
+    if (nrow(mm) < nrow(newdata)) {
         warning("Observations dropped from newdata due to NA.")
     }
 
     ## remove intercept
-    if (NCOL(mm)==length(co)+1) {
+    if (ncol(mm) == length(co) + 1) {
         mm = mm[,-1,drop=FALSE]
     }
     y.pred = mm %*% co
@@ -159,13 +205,31 @@ ta.ols.predict <- function(object, newdata, use.fe = TRUE,...) {
     as.vector(y.pred)
 }
 
+ta.ols.parameters <- function(prednames, covarnames, mod) {
+    betas <- c()
+    for (pred in unique(prednames))
+        betas <- c(betas, mod$coeff[row.names(mod$coeff) == pred, 1])
+
+    gammaorder <- ta.gammaorder(prednames, covarnames)
+    factors <- attributes(mod$terms)$factors > 0
+
+    gammas <- rep(NA, max(gammaorder, na.rm=T))
+    for (ii in 1:length(gammaorder)) {
+        if (is.na(gammaorder[ii]))
+            next
+
+        gammas[gammaorder[ii]] <- mod$coeff[factors[row.names(factors) == prednames[ii],] & factors[row.names(factors) == covarnames[ii],]]
+    }
+
+    list(betas=betas, gammas=gammas)
+}
+
 ta.ols.predict.betas <- function(df, prednames, covarnames, mod) {
     list2env(ta.arguments(df, NULL, NULL, NULL, prednames, covarnames), environment())
 
-    gammaorder <- ta.gammaorder(prednames, covarnames)
-    betas <- mod$coeff[is.na(gammaorder)]
-    gammas <- rep(NA, sum(!is.na(gammaorder)))
-    gammas[gammaorder[!is.na(gammaorder)]] <- mod$coeff[!is.na(gammaorder)]
+    params <- ta.ols.parameters(prednames, covarnames, mod)
+    betas <- params$betas
+    gammas <- params$gammas
 
     result <- matrix(betas, nrow(zzs), length(betas)) # Only modify this for predictors with covariates
     gammas.so.far <- 0 # Keep track of how many coefficients used
@@ -218,20 +282,19 @@ ta.gammaorder <- function(prednames, covarnames) {
 }
 
 ## Find the set of gammas that has the same marginal effects
-ta.match.marginals <- function(df, outname, adm1name, adm2name, prednames, covarnames, weights=1) {
+ta.match.marginals <- function(df, outname, adm1name, adm2name, prednames, covarnames, zz0=NULL, betas0=NULL, weights=1, prior=noninformative.prior) {
     list2env(ta.arguments(df, outname, adm1name, adm2name, prednames, covarnames), environment())
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
     list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
 
     mod.ols <- ta.ols(df, outname, adm1name, adm2name, prednames, covarnames, weights)
-    ## Pull out marginals in the right order
-    marginals.ols <- rep(NA, sum(covarnames != '1'))
-    gammaorder <- ta.gammaorder(prednames, covarnames)
-    for (ii in 1:length(gammaorder))
-        if (!is.na(gammaorder[ii]))
-            marginals.ols[gammaorder[ii]] <- mod.ols$coeff[ii]
 
-    zzmeans <- colMeans(zzs)
+    ## Pull out marginals in the right order
+    params <- ta.ols.parameters(prednames, covarnames, mod.ols)
+    marginals.ols <- params$gammas
+
+    if (is.null(zz0))
+        zz0 <- get.meanzz(df, covarnames, weights)
     zzvars <- apply(zzs, 2, sd)
 
     marginals.zzvars <- c()
@@ -239,16 +302,61 @@ ta.match.marginals <- function(df, outname, adm1name, adm2name, prednames, covar
         marginals.zzvars <- c(marginals.zzvars, zzvars[kls[kk,]])
 
     objective <- function(gammas) {
-        betas <- stacked.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
+        if (is.null(betas0))
+            betas0 <- stacked.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
 
-        marginals.mle <- marginal.interactions(zzmeans, kls, betas, gammas)
+        marginals.mle <- marginal.interactions(zz0, kls, betas0, gammas)
 
         sum((marginals.ols - marginals.mle)^2 / marginals.zzvars)
     }
 
     ## Decide on initial gammas
-    result <- estimate.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights, maxiter=1, initgammas=NULL, gammaprior=noninformative.gammaprior)
+    if (is.null(betas0))
+        get.betas <- stacked.betas
+    else
+        get.betas <- make.known.betas(zz0, betas0)
 
-    optim(result$gammas, objective)$par
+    result <- estimate.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights, maxiter=1, initgammas=NULL, prior=noninformative.prior, get.betas=get.betas)
+
+    opt <- optim(result$gammas, objective)
+    if (opt$convergence == 0)
+        return(NULL)
+
+    gammas <- opt$par
+
+    # Compare to all 0's
+    betas <- get.betas(K, L, gammas * 0, dmyy, dmxxs, zzs, kls, adm1, weights)
+    likeli0 <- calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas * 0,
+                                    result$sigmas, weights, prior)
+
+    ## Decrease if too extreme
+    for (ii in 1:10) { # To 0.1% of gammas
+        betas <- get.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
+        likeli <- calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, result$sigmas, weights, prior)
+        if (likeli > likeli0) {
+            print(ii)
+            return(gammas)
+        }
+        gammas <- gammas / 2
+    }
+
+    gammas * 0
 }
 
+get.meanzz <- function(df, covarnames, weights=1) {
+    meanzz <- c()
+    zzcovarnames <- c()
+
+    for (covar in unique(covarnames)) {
+        if (covar != '1') {
+            zzcovarnames <- c(zzcovarnames, covar)
+            if (length(weights) == 1)
+                meanzz <- c(meanzz, mean(df[, covar]))
+            else
+                meanzz <- c(meanzz, weighted.mean(df[, covar], weights))
+        }
+    }
+
+    names(meanzz) <- zzcovarnames
+    meanzz
+}
