@@ -68,9 +68,9 @@ covarnames`, as defined below:
 For example, the 5-bin example is called as follows:
 ```
 source(".../logspec/tableapi.R", chdir=T)
-ta.estimate.logspec(df, 'rate', 'adm1', 'adm2',
+ta.estimate.logspec(df, 'rate', 'adm1',
                     c('bin1', 'bin1', 'bin1', 'bin2', 'bin2', 'bin2',
                       'bin4', 'bin4', 'bin4', 'bin5', 'bin5', 'bin5'),
                     c('1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc',
-                      '1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc'))
-```
+                      '1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc'),
+				    'adm2')```

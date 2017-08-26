@@ -1,15 +1,15 @@
 source("logspec.R")
 
-search.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=100, initgammas=NULL, prior=noninformative.prior, gammapriorderiv=noninformative.gammapriorderiv, known.betas.info=NULL) {
-    list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
+search.logspec <- function(yy, xxs, zzs, kls, adm1, factors, weights=1, maxiter=100, initgammas=NULL, prior=noninformative.prior, gammapriorderiv=noninformative.gammapriorderiv, known.betas.info=NULL) {
+    list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
 
     print("Preparing for search...")
-    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
+    list2env(demean.yxs(yy, xxs, factors, weights), environment())
 
-    search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter, gammas=initgammas, prior=prior, gammapriorderiv=gammapriorderiv, known.betas.info=known.betas.info)
+    search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, maxiter=maxiter, gammas=initgammas, prior=prior, gammapriorderiv=gammapriorderiv, known.betas.info=known.betas.info)
 }
 
-search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1, maxiter=100, betas=NULL, gammas=NULL, sigmas=NULL, betases=NULL, gammases=NULL, bestlikeli=-Inf, skipmethod=0, eps=.01, prior=noninformative.prior, gammapriorderiv=noninformative.gammapriorderiv, known.betas.info=NULL) {
+search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, maxiter=100, betas=NULL, gammas=NULL, sigmas=NULL, betases=NULL, gammases=NULL, bestlikeli=-Inf, skipmethod=0, eps=.01, prior=noninformative.prior, gammapriorderiv=noninformative.gammapriorderiv, known.betas.info=NULL) {
     if (maxiter == 0)
         return(list(betas=betas, gammas=gammas, sigmas=sigmas, betases=betases, gammases=gammases, likeli=bestlikeli))
 
@@ -19,7 +19,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
         print(logspec.predict.betas(as.data.frame(t(colMeans(zzs))), kls, make.known.betas(known.betas.info$zz0, known.betas.info$betas0)(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights), gammas))
     }
 
-    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1, adm2), environment())
+    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1), environment())
 
     if (is.null(known.betas.info))
         get.betas <- stacked.betas
@@ -28,12 +28,12 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
 
     if (skipmethod != 1) {
         print("Search: Convergence")
-        result <- estimate.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, initgammas=gammas, prior=prior, get.betas=get.betas)
+        result <- estimate.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, initgammas=gammas, prior=prior, get.betas=get.betas)
         if (result$likeli > bestlikeli) {
             print(paste("Improved!", result$likeli))
 
             if (result$likeli > bestlikeli + eps)
-                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter-1, betas=result$betas, gammas=result$gammas, sigmas=result$sigmas, betases=betases, gammases=gammases, bestlikeli=result$likeli, skipmethod=1, eps=eps, prior=prior, known.betas.info=known.betas.info))
+                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, maxiter=maxiter-1, betas=result$betas, gammas=result$gammas, sigmas=result$sigmas, betases=betases, gammases=gammases, bestlikeli=result$likeli, skipmethod=1, eps=eps, prior=prior, known.betas.info=known.betas.info))
             else {
                 betas <- result$betas
                 gammas <- result$gammas
@@ -45,14 +45,14 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
 
     if (skipmethod != 2 && sum(kls) > 0) {
         print("Search: Gradient ascent")
-        result <- estimate.logspec.gammaoptim.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, sigmas=sigmas, weights=weights, initgammas=gammas, prior=prior, gammapriorderiv=gammapriorderiv, get.betas=get.betas)
+        result <- estimate.logspec.gammaoptim.demeaned(dmyy, dmxxs, zzs, kls, adm1, sigmas=sigmas, weights=weights, initgammas=gammas, prior=prior, gammapriorderiv=gammapriorderiv, get.betas=get.betas)
         if (-result$value > bestlikeli) {
             print(paste("Improved!", -result$value))
 
             betas <- get.betas(K, L, result$par, dmyy, dmxxs, zzs, kls, adm1, weights)
 
             if (-result$value > bestlikeli + eps)
-                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter-1, betas=betas, gammas=result$par, sigmas=sigmas, betases=betases, gammases=gammases, bestlikeli=-result$value, skipmethod=2, eps=eps, prior=prior, known.betas.info=known.betas.info))
+                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, maxiter=maxiter-1, betas=betas, gammas=result$par, sigmas=sigmas, betases=betases, gammases=gammases, bestlikeli=-result$value, skipmethod=2, eps=eps, prior=prior, known.betas.info=known.betas.info))
             else {
                 gammas <- result$par
                 bestlikeli <- -result$value
@@ -63,9 +63,9 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
     if (skipmethod != 3) {
         print("Search: Optimization")
         if (is.null(sigmas))
-            result <- estimate.logspec.optim.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, initgammas=gammas, prior=prior)
+            result <- estimate.logspec.optim.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, initgammas=gammas, prior=prior)
         else
-            result <- estimate.logspec.optim.step4(dmyy, dmxxs, zzs, kls, adm1, adm2, gammas, sigmas, weights=weights, prior=prior, get.betas=get.betas)
+            result <- estimate.logspec.optim.step4(dmyy, dmxxs, zzs, kls, adm1, gammas, sigmas, weights=weights, prior=prior, get.betas=get.betas)
 
         likeli <- calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, result$betas, result$gammas, result$sigma, weights, prior)
 
@@ -73,7 +73,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
             print(paste("Improved!", likeli))
 
             if (likeli > bestlikeli + eps)
-                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter-1, betas=result$betas, gammas=result$gammas, sigmas=result$sigma, betases=betases, gammases=gammases, bestlikeli=likeli, skipmethod=3, eps=eps, prior=prior, known.betas.info=known.betas.info))
+                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, maxiter=maxiter-1, betas=result$betas, gammas=result$gammas, sigmas=result$sigma, betases=betases, gammases=gammases, bestlikeli=likeli, skipmethod=3, eps=eps, prior=prior, known.betas.info=known.betas.info))
             else {
                 betas <- result$betas
                 gammas <- result$gammas
@@ -126,7 +126,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
             gammases <- (gammases + apply(result$gammas[101:600,], 2, sd)) / 2
 
             if (result$best.likeli > bestlikeli + eps)
-                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter-1, betas=result$betas[result$best.index,], gammas=result$gammas[result$best.index,], sigmas=sigmas, betases=betases, gammases=gammases, bestlikeli=result$best.likeli, skipmethod=4, eps=eps, prior=prior, known.betas.info=known.betas.info))
+                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, maxiter=maxiter-1, betas=result$betas[result$best.index,], gammas=result$gammas[result$best.index,], sigmas=sigmas, betases=betases, gammases=gammases, bestlikeli=result$best.likeli, skipmethod=4, eps=eps, prior=prior, known.betas.info=known.betas.info))
             else {
                 betas <- result$betas[result$best.index,]
                 gammas <- result$gammas[result$best.index,]
@@ -157,7 +157,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
         else
             known.betas.info.offset <- list(zz0=known.betas.info$zz0 - offsets, betas0=known.betas.info$betas0)
 
-        result <- search.logspec.demeaned(dmyy, dmxxs, zzs.offset, kls, adm1, adm2, weights=weights, maxiter=1, betas=zoffset.adjust.betas(betas, offsets, kls, gammas), gammas=gammas, sigmas=sigmas, betases=zoffset.adjust.betas(betases, offsets, kls, gammas), gammases=gammases, bestlikeli=bestlikeli, skipmethod=5, eps=eps, prior=prior, known.betas.info=known.betas.info.offset)
+        result <- search.logspec.demeaned(dmyy, dmxxs, zzs.offset, kls, adm1, weights=weights, maxiter=1, betas=zoffset.adjust.betas(betas, offsets, kls, gammas), gammas=gammas, sigmas=sigmas, betases=zoffset.adjust.betas(betases, offsets, kls, gammas), gammases=gammases, bestlikeli=bestlikeli, skipmethod=5, eps=eps, prior=prior, known.betas.info=known.betas.info.offset)
 
         ## Re-calculate with true zzs
         if (is.null(known.betas.info))
@@ -172,7 +172,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1
 
             readjusted.betases <- zoffset.adjust.betas(result$betases, -offsets, kls, result$gammas)
             if (likeli > bestlikeli + eps)
-                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter-1, betas=readjusted.betas, gammas=result$gammas, sigmas=result$sigmas, betases=readjusted.betases, gammases=result$gammases, bestlikeli=likeli, skipmethod=5, eps=eps, prior=prior, known.betas.info=known.betas.info))
+                return(search.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, maxiter=maxiter-1, betas=readjusted.betas, gammas=result$gammas, sigmas=result$sigmas, betases=readjusted.betases, gammases=result$gammases, bestlikeli=likeli, skipmethod=5, eps=eps, prior=prior, known.betas.info=known.betas.info))
             else {
                 betas <- readjusted.betas
                 gammas <- result$gammas

@@ -1,28 +1,10 @@
-logspec.get.fe <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas) {
-    list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-
-    pred.yy <- calc.expected.demeaned(xxs, zzs, kls, adm1, betas, gammas) # Okay that not demeaned here
-
-    fes <- list()
-    for (region in unique(adm2)) {
-        regioniis <- which(adm2 == region)
-        fes[[region]] <- mean(yy[regioniis] - pred.yy[regioniis])
-    }
-
-    fes
-}
-
-logspec.predict <- function(xxs, zzs, kls, adm1, adm2, betas, gammas, fes=NULL) {
-    list2env(check.arguments(rep(0, nrow(xxs)), xxs, zzs, kls, adm1, adm2), environment())
+logspec.predict <- function(xxs, zzs, kls, adm1, betas, gammas, means=NULL) {
+    list2env(check.arguments(rep(0, nrow(xxs)), xxs, zzs, kls, adm1), environment())
 
     yy <- calc.expected.demeaned(xxs, zzs, kls, adm1, betas, gammas)
 
-    if (!is.null(fes)) {
-        for (region in unique(adm2)) {
-            regioniis <- which(adm2 == region)
-            yy[regioniis] <- yy[regioniis] + fes[[region]]
-        }
-    }
+    if (!is.null(fes))
+        yy <- yy + means
 
     yy
 }
@@ -44,15 +26,15 @@ logspec.predict.betas <- function(zzs, kls, betas, gammas) {
     result
 }
 
-rsqr.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, betas, gammas, weights=1) {
+rsqr.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, betas, gammas, weights=1) {
     dmyy.pred <- calc.expected.demeaned(dmxxs, zzs, kls, adm1, betas, gammas) ## NOTE: should include weights, when change by ADM1
 
     1 - sum(weights * (dmyy - dmyy.pred)^2) / sum(weights * dmyy^2)
 }
 
-rsqr <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas, weights=1) {
-    fes <- logspec.get.fe(yy, xxs, zzs, kls, adm1, adm2, betas, gammas)
-    yy.pred <- logspec.predict(xxs, zzs, kls, adm1, adm2, betas, gammas, fes)
+rsqr <- function(yy, xxs, zzs, kls, adm1, factors, betas, gammas, weights=1) {
+    means <- logspec.get.fe(yy, xxs, zzs, kls, adm1, factors, betas, gammas, weights=weights)
+    yy.pred <- logspec.predict(xxs, zzs, kls, adm1, betas, gammas, means)
 
     if (length(weights) == 1)
         return(1 - sum((yy - yy.pred)^2) / sum((yy - mean(yy))^2))
@@ -60,9 +42,9 @@ rsqr <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas, weights=1) {
         return(1 - sum(weights * (yy - yy.pred)^2) / sum(weights * (yy - weighted.mean(yy, weights))^2))
 }
 
-rsqr.projected <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas, weights=1) {
-    list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
+rsqr.projected <- function(yy, xxs, zzs, kls, adm1, factors, betas, gammas, weights=1) {
+    list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
+    list2env(demean.yxs(yy, xxs, factors, weights), environment())
 
-    rsqr.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, betas, gammas, weights)
+    rsqr.demeaned(dmyy, dmxxs, zzs, kls, adm1, betas, gammas, weights)
 }

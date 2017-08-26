@@ -1,5 +1,7 @@
 library(nnls)
 
+source("shared.R")
+
 ## Calculate x_k exp(sum gamma_kl z_l) as a NxK matrix
 calc.covariated.predictors <- function(dmxxs, zzs, kls, mm, gammas) {
     result <- dmxxs # Only modify this for predictors with covariates
@@ -57,78 +59,16 @@ noninformative.gammapriorderiv <- function(gammas) {
     rep(0, length(gammas))
 }
 
-## Demean a set of values by region (partial out region fixed effects)
-regional.demean <- function(values, regions, weights) {
-    if (length(weights) == 1) {
-        for (region in unique(regions)) {
-            regioniis <- which(regions == region)
-            values[regioniis] <- values[regioniis] - mean(values[regioniis])
-        }
-    } else {
-        for (region in unique(regions)) {
-            regioniis <- which(regions == region)
-            values[regioniis] <- values[regioniis] - weighted.mean(values[regioniis], weights[regioniis])
-        }
-    }
-
-    values
-}
-
-## Check that all of the given arguments are correctly specified
-check.arguments <- function(yy, xxs, zzs, kls, adm1, adm2) {
-    if (is.null(nrow(xxs)) || is.null(ncol(xxs)))
-        stop("xxs must be a matrix or data.frame.")
-
-    if (is.null(nrow(zzs)) || is.null(ncol(zzs)))
-        stop("zzs must be a matrix or data.frame.")
-
-    N <- length(yy)
-    if (nrow(xxs) != N || length(adm1) != N || length(adm2) != N)
-        stop("yy, xxs, adm1, and adm2 must all have the same number of observations.")
-
-    K <- ncol(xxs)
-    L <- ncol(zzs)
-
-    if (nrow(kls) != K)
-        stop("kls must have as many rows as xxs has columns.")
-
-    if (ncol(kls) != L)
-        stop("kls must have as many columns as zzs.")
-
-    if (!is.logical(kls))
-        stop("kls must consist only of trues and falses.")
-
-    M <- max(adm1)
-    if (length(unique(adm1)) != M)
-        stop("adm1 must contain intgers from 1 to M.")
-
-    if (nrow(zzs) != M)
-        stop("zzs must have the same number of rows as ADM1 values.")
-
-    return(list(K=K, L=L, N=N, M=M))
-}
-
-## Demean all observations by ADM2 regions (partial out ADM2 fixed effects)
-demean.yxs <- function(K, yy, xxs, adm2, weights) {
-    ## De-mean observations
-    dmyy <- regional.demean(yy, adm2, weights)
-    dmxxs <- xxs
-    for (kk in 1:K)
-        dmxxs[, kk] <- regional.demean(dmxxs[, kk], adm2, weights)
-
-    list(dmyy=dmyy, dmxxs=as.matrix(dmxxs))
-}
-
 ## Estimate the parameters of the log specification
-estimate.logspec <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, maxiter=1000, initgammas=NULL, prior=noninformative.prior, get.betas=stacked.betas) {
-    list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
+estimate.logspec <- function(yy, xxs, zzs, kls, adm1, factors, weights=1, maxiter=1000, initgammas=NULL, prior=noninformative.prior, get.betas=stacked.betas) {
+    list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
+    list2env(demean.yxs(yy, xxs, factors, weights), environment())
 
-    estimate.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, maxiter=maxiter, initgammas=initgammas, prior=prior, get.betas=get.betas)
+    estimate.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, maxiter=maxiter, initgammas=initgammas, prior=prior, get.betas=get.betas)
 }
 
-estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1, maxiter=1000, initgammas=NULL, prior=noninformative.prior, get.betas=stacked.betas) {
-    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1, adm2), environment())
+estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, maxiter=1000, initgammas=NULL, prior=noninformative.prior, get.betas=stacked.betas) {
+    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1), environment())
 
     if (maxiter > 1)
         print("Iterating...")
@@ -307,15 +247,15 @@ make.known.betas <- function(zz0, betas0) {
 }
 
 ## Estimate the maximum likelihood, using R's optim function
-estimate.logspec.optim <- function(yy, xxs, zzs, kls, adm1, adm2, weights=1, initgammas=NULL, prior=noninformative.prior, get.betas=stacked.betas) {
-    list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
+estimate.logspec.optim <- function(yy, xxs, zzs, kls, adm1, factors, weights=1, initgammas=NULL, prior=noninformative.prior, get.betas=stacked.betas) {
+    list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
+    list2env(demean.yxs(yy, xxs, factors, weights), environment())
 
-    estimate.logspec.optim.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=weights, initgammas=initgammas, prior=prior, get.betas=get.betas)
+    estimate.logspec.optim.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, initgammas=initgammas, prior=prior, get.betas=get.betas)
 }
 
-estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, weights=1, initgammas=NULL, prior=noninformative.prior, get.betas=stacked.betas) {
-    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1, adm2), environment())
+estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, initgammas=NULL, prior=noninformative.prior, get.betas=stacked.betas) {
+    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1), environment())
 
     if (is.null(initgammas)) {
         ## Approximation 1: No covariate effect
@@ -360,15 +300,15 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, w
 
     print(c("Step 3:", calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights, prior)))
 
-    result <- estimate.logspec.optim.step4(dmyy, dmxxs, zzs, kls, adm1, adm2, soln$par[1:sum(kls)], sigma, weights=weights, prior=prior, get.betas=get.betas)
+    result <- estimate.logspec.optim.step4(dmyy, dmxxs, zzs, kls, adm1, soln$par[1:sum(kls)], sigma, weights=weights, prior=prior, get.betas=get.betas)
 
     print(c("Step 4:", calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights, prior)))
 
     result
 }
 
-estimate.logspec.optim.step4 <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, gammas, sigma, weights=1, prior=noninformative.prior, get.betas=stacked.betas) {
-    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1, adm2), environment())
+estimate.logspec.optim.step4 <- function(dmyy, dmxxs, zzs, kls, adm1, gammas, sigma, weights=1, prior=noninformative.prior, get.betas=stacked.betas) {
+    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1), environment())
 
     objective2 <- function(params) {
         gammas <- params[1:sum(kls)]

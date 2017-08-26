@@ -19,17 +19,17 @@ calc.gamma.gradient <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigmas
     return(gradients)
 }
 
-get.gamma.gradient <- function(yy, xxs, zzs, kls, adm1, adm2, betas, gammas, sigmas, weights=1) {
-    list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
+get.gamma.gradient <- function(yy, xxs, zzs, kls, adm1, factors, betas, gammas, sigmas, weights=1) {
+    list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
+    list2env(demean.yxs(yy, xxs, factors, weights), environment())
 
     calc.gamma.gradient(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights)
 }
 
 ## This uses numerical differentiation; it's a good comparison
-estimate.logspec.gammaoptim.nograd <- function(yy, xxs, zzs, kls, adm1, adm2, sigmas, weights=1, initgammas=NULL, prior=noninformative.prior, get.betas=stacked.betas) {
-    list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
+estimate.logspec.gammaoptim.nograd <- function(yy, xxs, zzs, kls, adm1, factors, sigmas, weights=1, initgammas=NULL, prior=noninformative.prior, get.betas=stacked.betas) {
+    list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
+    list2env(demean.yxs(yy, xxs, factors, weights), environment())
 
     if (is.null(initgammas))
         initgammas <- rep(0, sum(kls))
@@ -44,15 +44,15 @@ estimate.logspec.gammaoptim.nograd <- function(yy, xxs, zzs, kls, adm1, adm2, si
 }
 
 # The same as above, but with gradients
-estimate.logspec.gammaoptim <- function(yy, xxs, zzs, kls, adm1, adm2, sigmas, weights=1, initgammas=NULL, prior=noninformative.prior, gammapriorderiv=noninformative.gammapriorderiv, get.betas=stacked.betas) {
-    list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
+estimate.logspec.gammaoptim <- function(yy, xxs, zzs, kls, adm1, factors, sigmas, weights=1, initgammas=NULL, prior=noninformative.prior, gammapriorderiv=noninformative.gammapriorderiv, get.betas=stacked.betas) {
+    list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
+    list2env(demean.yxs(yy, xxs, factors, weights), environment())
 
-    estimate.logspec.gammaoptim.demeaned(dmyy, dmxxs, zzs, kls, adm1, adm2, sigmas, weights=weights, initgammas=initgammas, prior=prior, gammapriorderiv=gammapriorderiv, get.betas=get.betas)
+    estimate.logspec.gammaoptim.demeaned(dmyy, dmxxs, zzs, kls, adm1, sigmas, weights=weights, initgammas=initgammas, prior=prior, gammapriorderiv=gammapriorderiv, get.betas=get.betas)
 }
 
-estimate.logspec.gammaoptim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, adm2, sigmas, weights=1, initgammas=NULL, prior=noninformative.prior, gammapriorderiv=noninformative.gammapriorderiv, get.betas=stacked.betas) {
-    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1, adm2), environment())
+estimate.logspec.gammaoptim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, sigmas, weights=1, initgammas=NULL, prior=noninformative.prior, gammapriorderiv=noninformative.gammapriorderiv, get.betas=stacked.betas) {
+    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1), environment())
     if (is.null(initgammas))
         initgammas <- rep(0, sum(kls))
 

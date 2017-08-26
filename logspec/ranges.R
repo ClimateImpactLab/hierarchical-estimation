@@ -170,9 +170,9 @@ serr.conservative <- function(vcv.ols, params) {
     pmax(sd.ols, sd.bayes, sd.tails)
 }
 
-estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T, weights=1, prior=noninformative.prior) {
-    list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
+estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, factors, iter=600, warmup=100, seeds=4, use.ols=T, weights=1, prior=noninformative.prior) {
+    list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
+    list2env(demean.yxs(yy, xxs, factors, weights), environment())
 
     if (use.ols) {
         vcv.start <- tryCatch({
@@ -203,9 +203,9 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, adm2, i
         list(betas=result$best.beta, gammas=result$best.gamma, vcv=diag(serr) %*% cor(cbind(result$betas, result$gammas)) %*% diag(serr), se=serr)
 }
 
-estimate.se <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, adm2, iter=600, warmup=100, seeds=4, use.ols=T, weights=1, prior=noninformative.prior) {
-    list2env(check.arguments(yy, xxs, zzs, kls, adm1, adm2), environment())
-    list2env(demean.yxs(K, yy, xxs, adm2, weights), environment())
+estimate.se <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, factors, iter=600, warmup=100, seeds=4, use.ols=T, weights=1, prior=noninformative.prior) {
+    list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
+    list2env(demean.yxs(yy, xxs, factors, weights), environment())
 
     if (use.ols) {
         vcv.start <- tryCatch({

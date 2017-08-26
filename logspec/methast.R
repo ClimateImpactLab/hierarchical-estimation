@@ -68,17 +68,17 @@ repeated.methast <- function(seeds, iter, warmup, param0, sd0, likeli, verbose=N
     list(params=params, best.param=param0)
 }
 
-parallel.single.methast <- function(prefix, seed, betas, gammas, betaerr, gammaerr, yy, xxs, zzs, adm1, adm2, weights=1, iter=600, warmup=100, prior=noninformative.prior) {
-    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
-    list2env(demean.yxs(yy, xxs, adm2, weights), parent.frame())
+parallel.single.methast <- function(prefix, seed, betas, gammas, betaerr, gammaerr, yy, xxs, zzs, adm1, factors, weights=1, iter=600, warmup=100, prior=noninformative.prior) {
+    list2env(check.arguments(yy, xxs, zzs, adm1, factors), parent.frame())
+    list2env(demean.yxs(yy, xxs, factors, weights), parent.frame())
 
     methast.result <- methast.betagamma(K, L, dmxxs, dmyy, zzs, adm1, iter, betas, gammas, betaerr, gammaerr, weights, prior=prior)
     save(methast.result, file=paste0("MH-", prefix, seed, ".RData"))
 }
 
-parallel.combine.methast <- function(prefix, seeds, yy, xxs, zzs, adm1, adm2, weights=1, iter=600, warmup=100, prior=noninformative.prior) {
-    list2env(check.arguments(yy, xxs, zzs, adm1, adm2), parent.frame())
-    list2env(demean.yxs(yy, xxs, adm2, weights), parent.frame())
+parallel.combine.methast <- function(prefix, seeds, yy, xxs, zzs, adm1, factors, weights=1, iter=600, warmup=100, prior=noninformative.prior) {
+    list2env(check.arguments(yy, xxs, zzs, adm1, factors), parent.frame())
+    list2env(demean.yxs(yy, xxs, factors, weights), parent.frame())
 
     betas <- matrix(NA, 0, K)
     gammas <- matrix(NA, 0, K*L)
