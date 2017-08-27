@@ -1,48 +1,55 @@
 source("logspec.R")
 source("search.R")
 
-ta.arguments <- function(df, outname, adm1name, prednames, covarnames, factorouts) {
+options(lfe.pint=5)
+
+ta.get.column <- function(df, name) {
+    with(df, eval(parse(text=name)))
+}
+
+ta.interpret.factorout <- function(df, factorout) {
+    if (grepl(':', factorout)) {
+        parts <- trimws(strsplit(factorout, ":")[[1]])
+        value1 <- ta.get.column(df, parts[1])
+        value2 <- ta.get.column(df, parts[2])
+
+        if (is.factor(value1) && is.factor(value2))
+            thisfactor <- as.factor(paste(as.character(value1), as.character(value2), sep=':'))
+        else if (is.factor(value1)) {
+            attr(value1, 'x') <- value2
+            thisfactor <- value1
+        } else if (is.factor(value2)) {
+            attr(value2, 'x') <- value1
+            thisfactor <- value2
+        } else
+            stop(paste("In factorouts, either", parts[1], "or", parts[2], "must be a factor"))
+    } else {
+        thisfactor <- as.factor(ta.get.column(df, factorout))
+    }
+
+    thisfactor
+}
+
+ta.arguments.stage1 <- function(df, outname, prednames, factorouts, demeanfile) {
     if (!is.null(outname))
         yy <- df[, outname]
 
-    if (!is.null(adm1name))
-        adm1 <- as.numeric(factor(df[, adm1name]))
-    else
-        adm1 <- NULL
-
     ## Create the factor list
-    if (length(factorouts) == 1)
-        factors <- df[, factorouts]
-    else {
-        factors <- list()
-        for (ii in 1:length(factorouts)) {
-            factorout <- factorouts[ii]
-            if (grepl(':', factorout)) {
-                parts <- trimws(strsplit(factorout, ":")[[1]])
-                value1 <- df[, parts[1]]
-                value2 <- df[, parts[2]]
-
-                if (is.factor(value1) && is.factor(value2))
-                    factors[[ii]] <- as.factor(paste(as.character(value1), as.character(value2), sep=':'))
-                else if (is.factor(value1)) {
-                    attr(value1, 'x') <- value2
-                    factors[[ii]] <- value1
-                } else if (is.factor(value2)) {
-                    attr(value2, 'x') <- value1
-                    factors[[ii]] <- value2
-                } else
-                    stop(paste("In factorouts, either", parts[1], "or", parts[2], "must be a factor"))
-            } else {
-                factors[[ii]] <- as.factor(df[, outname])
-            }
+    if (!is.null(demeanfile)) {
+        if (!file.exists(demeanfile))
+            stop(paste("Cannot file demean file", demeanfile))
+        factors <- demeanfile
+    } else {
+        if (length(factorouts) == 1)
+            factors <- ta.interpret.factorout(df, factorouts)
+        else {
+            factors <- list()
+            for (ii in 1:length(factorouts))
+                factors[[ii]] <- ta.interpret.factorout(df, factorouts[ii])
         }
     }
 
     unipreds <- unique(prednames)
-    unicovars <- unique(covarnames)
-    if (!('1' %in% unicovars))
-        stop("One of the covariates must be '1' for each predictor.")
-    unicovars <- unicovars[unicovars != '1'] # Drop this covariate
 
     ## Fill in missing predictors
     for (pred in unipreds)
@@ -50,6 +57,26 @@ ta.arguments <- function(df, outname, adm1name, prednames, covarnames, factorout
             df[, pred] <- NA
 
     xxs <- df[, unipreds]
+
+    if (is.null(outname))
+        list(factors=factors, xxs=xxs)
+    else
+        list(yy=yy, factors=factors, xxs=xxs)
+}
+
+ta.arguments <- function(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile) {
+    list2env(ta.arguments.stage1(df, outname, prednames, factorouts, demeanfile), environment())
+
+    if (!is.null(adm1name))
+        adm1 <- as.numeric(factor(df[, adm1name]))
+    else
+        adm1 <- NULL
+
+    unipreds <- unique(prednames)
+    unicovars <- unique(covarnames)
+    if (!('1' %in% unicovars))
+        stop("One of the covariates must be '1' for each predictor.")
+    unicovars <- unicovars[unicovars != '1'] # Drop this covariate
 
     ## Generate an order across representative rows
     if (!is.null(adm1name)) {
@@ -82,12 +109,13 @@ ta.arguments <- function(df, outname, adm1name, prednames, covarnames, factorout
 }
 
 ## Wrapper on estimate.logspec
-ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, factorouts, weights=1, priorset='default', initset='match') {
-    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts), environment())
+ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, factorouts, weights=1, priorset='default', initset='match', demeanfile=NULL) {
+    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
 
     ## Variables used by ta.match.marginals (can stay NULL)
     meanzz <- NULL
     meanbetas <- NULL
+    mod <- NULL
 
     ## Pass to search
     known.betas.info <- NULL
@@ -131,7 +159,7 @@ ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, fa
     if (initset == 'match') {
         ## Create initial gammas based on OLS
         print("Finding initial gamma values...")
-        initgammas <- ta.match.marginals(df, outname, adm1name, prednames, covarnames, factorouts, zz0=meanzz, betas0=meanbetas, weights)
+        initgammas <- ta.match.marginals(df, outname, adm1name, prednames, covarnames, factorouts, zz0=meanzz, betas0=meanbetas, weights, mod.ols=mod, demeanfile=demeanfile)
         print(initgammas)
     } else
         initgammas <- NULL
@@ -142,31 +170,31 @@ ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, fa
 }
 
 ## Wrapper on estimate.vcv
-ta.estimate.vcv <- function(betas, gammas, sigmas, df, outname, adm1name, prednames, covarnames, factorouts, ...) {
-    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts), environment())
+ta.estimate.vcv <- function(betas, gammas, sigmas, df, outname, adm1name, prednames, covarnames, factorouts, demeanfile=NULL, ...) {
+    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
     estimate.vcv(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, factors, prior=prior, ...)
 }
 
-ta.predict <- function(df, adm1name, prednames, covarnames, factorouts, betas, gammas, fes=NULL) {
-    list2env(ta.arguments(df, NULL, adm1name, prednames, covarnames, factorouts), environment())
+ta.predict <- function(df, adm1name, prednames, covarnames, factorouts, betas, gammas, fes=NULL, demeanfile=NULL) {
+    list2env(ta.arguments(df, NULL, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
 
     logspec.predict(xxs, zzs, kls, adm1, betas, gammas, fes)
 }
 
 ta.predict.betas <- function(df, prednames, covarnames, betas, gammas) {
-    list2env(ta.arguments(df, NULL, NULL, NULL, prednames, covarnames), environment())
+    list2env(ta.arguments(df, NULL, NULL, prednames, covarnames, c(), NULL), environment())
 
     logspec.predict.betas(zzs, kls, betas, gammas)
 }
 
-ta.rsqr <- function(fit, df, outname, adm1name, prednames, covarnames, factorouts, weights=1) {
-    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts), environment())
+ta.rsqr <- function(fit, df, outname, adm1name, prednames, covarnames, factorouts, weights=1, demeanfile=NULL) {
+    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
 
     rsqr(yy, xxs, zzs, kls, adm1, factors, fit$betas, fit$gammas, weights)
 }
 
-ta.rsqr.projected <- function(fit, df, outname, adm1name, prednames, covarnames, factorouts, weights=1) {
-    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts), environment())
+ta.rsqr.projected <- function(fit, df, outname, adm1name, prednames, covarnames, factorouts, weights=1, demeanfile=NULL) {
+    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
 
     rsqr.projected(yy, xxs, zzs, kls, adm1, factors, fit$betas, fit$gammas, weights)
 }
@@ -253,7 +281,7 @@ ta.ols.parameters <- function(prednames, covarnames, mod) {
 }
 
 ta.ols.predict.betas <- function(df, prednames, covarnames, mod) {
-    list2env(ta.arguments(df, NULL, NULL, NULL, prednames, covarnames), environment())
+    list2env(ta.arguments(df, NULL, prednames, covarnames, c(), NULL), environment())
 
     params <- ta.ols.parameters(prednames, covarnames, mod)
     betas <- params$betas
@@ -310,12 +338,13 @@ ta.gammaorder <- function(prednames, covarnames) {
 }
 
 ## Find the set of gammas that has the same marginal effects
-ta.match.marginals <- function(df, outname, adm1name, prednames, covarnames, factorouts, zz0=NULL, betas0=NULL, weights=1, prior=noninformative.prior) {
-    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts), environment())
+ta.match.marginals <- function(df, outname, adm1name, prednames, covarnames, factorouts, zz0=NULL, betas0=NULL, weights=1, prior=noninformative.prior, mod.ols=NULL, demeanfile=NULL) {
+    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
     list2env(demean.yxs(yy, xxs, factors, weights), environment())
 
-    mod.ols <- ta.ols(df, outname, adm1name, prednames, covarnames, factorouts, weights)
+    if (is.null(mod.ols))
+        mod.ols <- ta.ols(df, outname, adm1name, prednames, covarnames, factorouts, weights)
 
     ## Pull out marginals in the right order
     params <- ta.ols.parameters(prednames, covarnames, mod.ols)
@@ -387,4 +416,10 @@ get.meanzz <- function(df, covarnames, weights=1) {
 
     names(meanzz) <- zzcovarnames
     meanzz
+}
+
+ta.save.demeaned <- function(filename, df, outname, prednames, factorouts, weights=1) {
+    list2env(ta.arguments.stage1(df, outname, prednames, factorouts, demeanfile=NULL), environment())
+
+    save.demeaned(yy, xxs, factors, weights, filename)
 }

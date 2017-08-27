@@ -17,9 +17,12 @@ check.arguments <- function(yy, xxs, zzs, kls, adm1, factors=NULL) {
             for (ii in 1:length(factors))
                 if (length(factors[[ii]]) != N)
                     stop("All factors must the same number of observations as yy.")
-        } else
-            if (length(factors) != N)
+        } else {
+            if (length(factors) == 1 && !file.exists(factors))
+                stop("Cannot find demean file.")
+            else if (length(factors) != N)
                 stop("ADM2 must the same number of observations as yy.")
+        }
     }
 
     K <- ncol(xxs)
@@ -62,9 +65,12 @@ regional.demean <- function(values, regions, weights) {
 }
 
 demean.yxs <- function(yy, xxs, factors, weights) {
-    if (is.list(factors))
+    if (is.list(factors) || is.matrix(factors) || 'x' %in% names(attributes(factors)))
         demean.yxs.lfe(yy, xxs, factors, weights)
-    else
+    else if (length(factors) == 1 && file.exists(factors)) {
+        load.demeaned(factors)
+        list(dmyy=dmyy, dmxxs=dmxxs)
+    } else
         demean.yxs.adm(yy, xxs, factors, weights)
 }
 
@@ -81,21 +87,41 @@ demean.yxs.adm <- function(yy, xxs, adm2, weights) {
 
 ## Demean, based on a factor list
 demean.yxs.lfe <- function(yy, xxs, fl, weights) {
-    results <- demeanlist(list(yy, xxs), fl, weights=weights)
+    allentries <- list(yy)
+    for (ii in 1:ncol(xxs))
+        allentries[[ii+1]] <- xxs[, ii]
 
-    list(dmyy=results[[1]], dmxxs=as.matrix(results[[2]]))
+    if (length(weights) == 1)
+        results <- demeanlist(allentries, fl, progress=1)
+    else
+        results <- demeanlist(allentries, fl, weights=weights, progress=1)
+
+    dmxxs <- results[[2]]
+    for (ii in 2:ncol(xxs))
+        dmxxs <- cbind(dmxxs, results[[ii+1]])
+
+    list(dmyy=results[[1]], dmxxs=dmxxs)
 }
 
 logspec.get.fe <- function(yy, xxs, zzs, kls, adm1, factors, betas, gammas, weights=1) {
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
 
-    pred.yy <- calc.expected.demeaned(xxs, zzs, kls, adm1, betas, gammas) # Okay that not demeaned here
-
     means <- rep(NA, length(yy))
 
     if (is.list(factors)) {
-        means <- demeanlist(list(yy, xxs), factors, weights=weights, means=T)
+        means <- demeanlist(list(yy, xxs), factors, weights=weights, progress=1, means=T)
+    } else if (length(factors) == 1 && file.exists(factors)) {
+        load.demeaned(factors)
+        for (region in unique(factors)) {
+            regioniis <- which(factors == region)
+            if (length(weights) == 1)
+                means[regioniis] <- mean(yy[regioniis] - dmyy[regioniis])
+            else
+                means[regioniis] <- weighted.mean(yy[regioniis] - dmyy[regioniis], weights[regioniis])
+        }
     } else {
+        pred.yy <- calc.expected.demeaned(xxs, zzs, kls, adm1, betas, gammas) # Okay that not demeaned here
+
         for (region in unique(factors)) {
             regioniis <- which(factors == region)
             if (length(weights) == 1)
@@ -106,4 +132,14 @@ logspec.get.fe <- function(yy, xxs, zzs, kls, adm1, factors, betas, gammas, weig
     }
 
     means
+}
+
+save.demeaned <- function(yy, xxs, factors, weights, filename) {
+    list2env(demean.yxs(yy, xxs, factors, weights), environment())
+
+    save(dmyy, dmxxs, file=filename)
+}
+
+load.demeaned <- function(filename) {
+    load(filename)
 }
