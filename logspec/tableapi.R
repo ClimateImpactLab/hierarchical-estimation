@@ -182,7 +182,7 @@ ta.predict <- function(df, adm1name, prednames, covarnames, factorouts, betas, g
 }
 
 ta.predict.betas <- function(df, prednames, covarnames, betas, gammas) {
-    list2env(ta.arguments(df, NULL, NULL, prednames, covarnames, c(), NULL), environment())
+    list2env(ta.arguments(df, NULL, NULL, prednames, covarnames, c(), NULL, NULL), environment())
 
     logspec.predict.betas(zzs, kls, betas, gammas)
 }
@@ -281,7 +281,7 @@ ta.ols.parameters <- function(prednames, covarnames, mod) {
 }
 
 ta.ols.predict.betas <- function(df, prednames, covarnames, mod) {
-    list2env(ta.arguments(df, NULL, prednames, covarnames, c(), NULL), environment())
+    list2env(ta.arguments(df, NULL, prednames, covarnames, c(), NULL, NULL), environment())
 
     params <- ta.ols.parameters(prednames, covarnames, mod)
     betas <- params$betas
