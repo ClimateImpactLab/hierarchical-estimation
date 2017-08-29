@@ -39,6 +39,8 @@ ta.arguments.stage1 <- function(df, outname, prednames, factorouts, demeanfile) 
         if (!file.exists(demeanfile))
             stop(paste("Cannot file demean file", demeanfile))
         factors <- demeanfile
+    } else if (length(factorouts) == 0) {
+        factors <- c()
     } else {
         if (length(factorouts) == 1)
             factors <- ta.interpret.factorout(df, factorouts)
