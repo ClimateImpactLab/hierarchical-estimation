@@ -283,7 +283,7 @@ ta.ols.parameters <- function(prednames, covarnames, mod) {
 }
 
 ta.ols.predict.betas <- function(df, prednames, covarnames, mod) {
-    list2env(ta.arguments(df, NULL, prednames, covarnames, c(), NULL, NULL), environment())
+    list2env(ta.arguments(df, NULL, NULL, prednames, covarnames, c(), NULL), environment())
 
     params <- ta.ols.parameters(prednames, covarnames, mod)
     betas <- params$betas
