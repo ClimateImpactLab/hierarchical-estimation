@@ -18,10 +18,11 @@ check.arguments <- function(yy, xxs, zzs, kls, adm1, factors=NULL) {
                 if (length(factors[[ii]]) != N)
                     stop("All factors must the same number of observations as yy.")
         } else {
-            if (length(factors) == 1 && !file.exists(factors))
-                stop("Cannot find demean file.")
-            else if (length(factors) != N)
-                stop("ADM2 must the same number of observations as yy.")
+            if (length(factors) == 1) {
+                if (!file.exists(factors))
+                    stop("Cannot find demean file.")
+            } else if (length(factors) != N)
+                stop("ADM2 must have the same number of observations as yy.")
         }
     }
 
