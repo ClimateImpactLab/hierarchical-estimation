@@ -69,7 +69,7 @@ demean.yxs <- function(yy, xxs, factors, weights) {
     if (is.list(factors) || is.matrix(factors) || 'x' %in% names(attributes(factors)))
         demean.yxs.lfe(yy, xxs, factors, weights)
     else if (length(factors) == 1 && file.exists(factors)) {
-        load.demeaned(factors)
+        load(factors)
         list(dmyy=dmyy, dmxxs=dmxxs)
     } else
         demean.yxs.adm(yy, xxs, factors, weights)
@@ -112,7 +112,7 @@ logspec.get.fe <- function(yy, xxs, zzs, kls, adm1, factors, betas, gammas, weig
     if (is.list(factors)) {
         means <- demeanlist(list(yy, xxs), factors, weights=weights, progress=1, means=T)
     } else if (length(factors) == 1 && file.exists(factors)) {
-        load.demeaned(factors)
+        load(factors)
         for (region in unique(factors)) {
             regioniis <- which(factors == region)
             if (length(weights) == 1)
@@ -141,6 +141,7 @@ save.demeaned <- function(yy, xxs, factors, weights, filename) {
     save(dmyy, dmxxs, file=filename)
 }
 
+## Don't use this as a synonym for load, since it doesn't add to the current environment
 load.demeaned <- function(filename) {
     load(filename)
 }
