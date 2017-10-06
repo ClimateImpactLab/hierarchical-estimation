@@ -111,25 +111,21 @@ ta.arguments <- function(df, outname, adm1name, prednames, covarnames, factorout
 }
 
 ## Wrapper on estimate.logspec
-ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, factorouts, weights=1, priorset='default', initset='match', demeanfile=NULL) {
+ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, factorouts, weights=1, priorset='default', initset='default', demeanfile=NULL, known.betas.info=NULL) {
     list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
 
     ## Variables used by ta.match.marginals (can stay NULL)
-    meanzz <- NULL
-    meanbetas <- NULL
     mod <- NULL
-
-    ## Pass to search
-    known.betas.info <- NULL
 
     if (priorset == 'none') {
         prior <- noninformative.prior
         gammapriorderiv <- noninformative.gammapriorderiv
-    } else if (priorset == 'default' || priorset == 'betaprior') {
+    } else if (priorset == 'betaprior' || (priorset == 'default' && is.null(known.betas.info))) {
         ## Determine mean betas
         mod <- ta.ols(df, outname, adm1name, prednames, covarnames, factorouts, weights=weights)
         meanzz <- get.meanzz(df, covarnames, weights)
         meanbetas <- ta.ols.predict.betas(as.data.frame(t(meanzz)), prednames, covarnames, mod)[1,]
+        known.betas.info <- list(zz0=meanzz, betas0=meanbetas)
 
         if (priorset == 'betaprior') {
             require(mvtnorm)
@@ -152,19 +148,20 @@ ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, fa
                 dbetas.dgammas <- kls * t(matrix(meanzz, length(meanzz), nrow(kls))) # KxL
                 t(d.dbetas) %*% dbetas.dgammas + gausspriorderiv(betas, gammas)
             }
-        } else {
-            ## By default, force betas to match at zz0
-            known.betas.info <- list(zz0=meanzz, betas0=meanbetas)
         }
     }
 
     if (initset == 'match') {
         ## Create initial gammas based on OLS
         print("Finding initial gamma values...")
-        initgammas <- ta.match.marginals(df, outname, adm1name, prednames, covarnames, factorouts, zz0=meanzz, betas0=meanbetas, weights, mod.ols=mod, demeanfile=demeanfile)
+        initgammas <- ta.match.marginals(df, outname, adm1name, prednames, covarnames, factorouts, known.betas.info=known.betas.info, weights=weights, mod.ols=mod, demeanfile=demeanfile)
         print(initgammas)
     } else
         initgammas <- NULL
+
+    ## By default, force betas to match at zz0
+    if (priorset != 'default')
+        known.betas.info <- NULL # Don't pass to search
 
     search.logspec(yy, xxs, zzs, kls, adm1, factors, weights=weights,
                    initgammas=initgammas, prior=prior,
@@ -340,7 +337,7 @@ ta.gammaorder <- function(prednames, covarnames) {
 }
 
 ## Find the set of gammas that has the same marginal effects
-ta.match.marginals <- function(df, outname, adm1name, prednames, covarnames, factorouts, zz0=NULL, betas0=NULL, weights=1, prior=noninformative.prior, mod.ols=NULL, demeanfile=NULL) {
+ta.match.marginals <- function(df, outname, adm1name, prednames, covarnames, factorouts, known.betas.info=NULL, weights=1, prior=noninformative.prior, mod.ols=NULL, demeanfile=NULL) {
     list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
     list2env(demean.yxs(yy, xxs, factors, weights), environment())
@@ -352,8 +349,10 @@ ta.match.marginals <- function(df, outname, adm1name, prednames, covarnames, fac
     params <- ta.ols.parameters(prednames, covarnames, mod.ols)
     marginals.ols <- params$gammas
 
-    if (is.null(zz0))
+    if (is.null(known.betas.info))
         zz0 <- get.meanzz(df, covarnames, weights)
+    else
+        zz0 <- known.betas.info$zz0
     zzvars <- apply(zzs, 2, sd)
 
     marginals.zzvars <- c()
@@ -361,8 +360,10 @@ ta.match.marginals <- function(df, outname, adm1name, prednames, covarnames, fac
         marginals.zzvars <- c(marginals.zzvars, zzvars[kls[kk,]])
 
     objective <- function(gammas) {
-        if (is.null(betas0))
+        if (is.null(known.betas.info))
             betas0 <- stacked.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
+        else
+            betas0 <- known.betas.info$betas0
 
         marginals.mle <- marginal.interactions(zz0, kls, betas0, gammas)
 
@@ -370,10 +371,10 @@ ta.match.marginals <- function(df, outname, adm1name, prednames, covarnames, fac
     }
 
     ## Decide on initial gammas
-    if (is.null(betas0))
+    if (is.null(known.betas.info))
         get.betas <- stacked.betas
     else
-        get.betas <- make.known.betas(zz0, betas0)
+        get.betas <- make.known.betas(known.betas.info$zz0, known.betas.info$betas0)
 
     result <- estimate.logspec.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights, maxiter=1, initgammas=NULL, prior=noninformative.prior, get.betas=get.betas)
 

@@ -110,7 +110,7 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, ma
         likeli1 <- calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, adm1.sigma, weights, prior)
 
         ## Check if we have converged
-        if (abs(likeli1 - bestlikeli) < 1e-6 || armijo.factor < 1e-6)
+        if (is.na(likeli1) || abs(likeli1 - bestlikeli) < 1e-6 || armijo.factor < 1e-6)
             break
 
         if (likeli1 > bestlikeli) {
@@ -175,7 +175,7 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, ma
         print(paste(c(iter, log2(1/armijo.factor), format(max(likeli1, likeli2), digits=0, scientific=F)), collapse=" "))
 
         ## Check if we have converged
-        if (abs(likeli2 - bestlikeli) < 1e-6 || armijo.factor < 1e-6)
+        if (is.na(likeli2) || abs(likeli2 - bestlikeli) < 1e-6 || armijo.factor < 1e-6)
             break
 
         if (likeli2 > bestlikeli) {
