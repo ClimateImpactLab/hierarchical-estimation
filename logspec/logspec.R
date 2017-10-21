@@ -101,6 +101,7 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, ma
             included <- adm1 == jj
             adm1.sigma[jj] <- mean(sd(residuals[included]) * dmyy[included] / dmyy.weighted[included])
         }
+        adm1.sigma[is.na(adm1.sigma)] <- 1 # Dummy value (otherwise fails when all values in ADM1 identical)
 
         if (bestgravity) {
             betas <- (bestbetas + armijo.factor * betas) / (1 + armijo.factor)
@@ -294,9 +295,14 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights
     dmyyhat <- calc.expected.demeaned(dmxxs, zzs, kls, adm1, betas, gammas)
     residuals <- dmyy - dmyyhat
 
+    saved.sigma <- sigma
+
     sigma <- c()
     for (jj in 1:M)
         sigma <- c(sigma, sd(residuals[adm1 == jj]))
+
+    ## Combine sigmas
+    sigma <- (sigma + saved.sigma) / 2 # to handle sigmas of 0
 
     print(c("Step 3:", calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights, prior)))
 

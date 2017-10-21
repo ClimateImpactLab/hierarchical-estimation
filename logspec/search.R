@@ -13,12 +13,6 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, maxi
     if (maxiter == 0)
         return(list(betas=betas, gammas=gammas, sigmas=sigmas, betases=betases, gammases=gammases, likeli=bestlikeli))
 
-    if (!is.null(known.betas.info) && !is.null(betas)) {
-        print(known.betas.info$betas0)
-        print(logspec.predict.betas(as.data.frame(t(colMeans(zzs))), kls, betas, gammas))
-        print(logspec.predict.betas(as.data.frame(t(colMeans(zzs))), kls, make.known.betas(known.betas.info$zz0, known.betas.info$betas0)(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights), gammas))
-    }
-
     list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1), environment())
 
     if (is.null(known.betas.info))
@@ -43,7 +37,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, maxi
         }
     }
 
-    if (skipmethod != 2 && sum(kls) > 0) {
+    if (skipmethod != 2 && sum(kls) > 0 && !is.null(sigmas)) {
         print("Search: Gradient ascent")
         result <- estimate.logspec.gammaoptim.demeaned(dmyy, dmxxs, zzs, kls, adm1, sigmas=sigmas, weights=weights, initgammas=gammas, prior=prior, gammapriorderiv=gammapriorderiv, get.betas=get.betas)
         if (-result$value > bestlikeli) {
