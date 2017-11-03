@@ -3,7 +3,7 @@ logspec.predict <- function(xxs, zzs, kls, adm1, betas, gammas, means=NULL) {
 
     yy <- calc.expected.demeaned(xxs, zzs, kls, adm1, betas, gammas)
 
-    if (!is.null(fes))
+    if (!is.null(means))
         yy <- yy + means
 
     yy
