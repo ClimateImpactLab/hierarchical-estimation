@@ -225,3 +225,8 @@ estimate.se <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, factors,
         return(c(result.each$betaerr, result.each$gammaerr))
     }
 }
+
+variance.at <- function(betas, gammas, vcv, xx, zz, kls) {
+    ....
+    return(var)
+}
