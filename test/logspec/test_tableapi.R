@@ -34,16 +34,16 @@ test.ta.estimate.vcv <- function() {
     df <- read.csv("example/true-binned.csv")
     df$log_gdppc <- log(df$gdppc)
 
-    result <- ta.estimate.logspec(df, 'rate', 'adm1', 'adm2',
+    result <- ta.estimate.logspec(df, 'rate', 'adm1',
                                   c('bin1', 'bin1', 'bin1', 'bin2', 'bin2', 'bin2',
                                     'bin4', 'bin4', 'bin4', 'bin5', 'bin5', 'bin5'),
                                   c('1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc',
-                                    '1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc'))
+                                    '1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc'), 'adm2')
 
     ta.estimate.vcv(result$betas, result$gamma, result$sigma,
-                    df, 'rate', 'adm1', 'adm2',
+                    df, 'rate', 'adm1',
                     c('bin1', 'bin1', 'bin1', 'bin2', 'bin2', 'bin2',
                       'bin4', 'bin4', 'bin4', 'bin5', 'bin5', 'bin5'),
                     c('1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc',
-                      '1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc'))
+                      '1', 'meant', 'log_gdppc', '1', 'meant', 'log_gdppc'), 'adm2')
 }
