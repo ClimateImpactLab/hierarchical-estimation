@@ -13,7 +13,7 @@ test.estimate.logspec <- function() {
     ## Find the coefficients
     result <- estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                                df[!duplicated(df$adm1), c('meant', 'log_gdppc')],
-                               matrix(T, 4, 2), df$adm1, df$adm2)
+                               matrix(1:8, 4, 2), df$adm1, df$adm2)
 
     beta1 <- .1 * (tstar - 13)^2 + .015
     beta2 <- .1 * (tstar - 17.5)^2
@@ -28,7 +28,7 @@ test.estimate.logspec <- function() {
     ## Apply weights
     result2 <- estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                                 df[!duplicated(df$adm1), c('meant', 'log_gdppc')],
-                                matrix(T, 4, 2), df$adm1, df$adm2, rexp(nrow(df)))
+                                matrix(1:8, 4, 2), df$adm1, df$adm2, rexp(nrow(df)))
 
     checkEqualsNumeric(result2$betas, c(beta1, beta2, beta4, beta5), tolerance=.02)
     checkEqualsNumeric(result2$gammas, rep(c(gamma1, gamma2), 4), tolerance=.02)
@@ -36,12 +36,33 @@ test.estimate.logspec <- function() {
     ## ## Try to solve without hierarchy
     ## estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
     ##                  df[!duplicated(df$adm2), c('meant', 'log_gdppc')],
-    ##                  matrix(T, 4, 2), df$adm2, df$adm2)
+    ##                  matrix(1:8, 4, 2), df$adm2, df$adm2)
 
     ## ## A cautionary tale: I get the right answer if I provide starting point
     ## estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
     ##                  df[!duplicated(df$adm1), c('meant', 'log_gdppc')],
-    ##                         matrix(T, 4, 2), df$adm2, df$adm2, initgammas=result$gammas)
+    ##                         matrix(1:8, 4, 2), df$adm2, df$adm2, initgammas=result$gammas)
+}
+
+test.estimate.logspec.shared <- function() {
+    ## Load the data
+    df <- read.csv("example/true-binned.csv")
+    df$log_gdppc <- log(df$gdppc)
+
+    ## Find the coefficients
+    result <- estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
+                               df[!duplicated(df$adm1), c('meant', 'log_gdppc')],
+                               matrix(c(1, 1, 3, 3, 2, 2, 4, 4), 4, 2), df$adm1, df$adm2)
+
+    beta1 <- .1 * (tstar - 13)^2 + .015
+    beta2 <- .1 * (tstar - 17.5)^2
+    beta4 <- .1 * (tstar - 26.5)^2
+    beta5 <- .1 * (tstar - 31)^2 + .015
+    checkEqualsNumeric(result$betas, c(beta1, beta2, beta4, beta5), tolerance=.01)
+
+    gamma1 <- -1/200
+    gamma2 <- -1/20
+    checkEqualsNumeric(result$gammas, rep(c(gamma1, gamma2), 4), tolerance=.01)
 }
 
 test.estimate.logspec.gammaonly <- function() {
@@ -57,7 +78,7 @@ test.estimate.logspec.gammaonly <- function() {
     ## Find the coefficients
     result <- estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                                df[!duplicated(df$adm1), c('meant', 'log_gdppc')],
-                               matrix(T, 4, 2), df$adm1, df$adm2, get.betas=get.betas)
+                               matrix(1:8, 4, 2), df$adm1, df$adm2, get.betas=get.betas)
 
     beta1 <- .1 * (tstar - 13)^2 + .015
     beta2 <- .1 * (tstar - 17.5)^2
@@ -76,7 +97,7 @@ test.estimate.logspec.gammaonly <- function() {
 
     result2 <- estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                                 df[!duplicated(df$adm1), c('meant', 'log_gdppc')],
-                                matrix(T, 4, 2), df$adm1, df$adm2, weights, get.betas=get.betas)
+                                matrix(1:8, 4, 2), df$adm1, df$adm2, weights, get.betas=get.betas)
 
     checkEqualsNumeric(result2$betas, c(beta1, beta2, beta4, beta5), tolerance=.02)
     checkEqualsNumeric(result2$gammas, rep(c(gamma1, gamma2), 4), tolerance=.02)
