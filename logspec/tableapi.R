@@ -1,5 +1,6 @@
 source("logspec.R")
 source("search.R")
+source("inout.R")
 
 options(lfe.pint=5)
 
