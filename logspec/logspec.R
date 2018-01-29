@@ -2,19 +2,21 @@ library(nnls)
 
 source("shared.R")
 
-## Calculate x_k exp(sum gamma_kl z_l) as a NxK matrix
 calc.covariated.predictors <- function(dmxxs, zzs, kls, mm, gammas) {
+    ##' Calculate x_k exp(sum gamma_kl z_l) as a NxK matrix
+    ##' @param dmxxs NxK matrix of predictors
+    ##' @param zzs MxL matrix of covariates
+    ##' @param kls KxL matrix of 0 - G; 0 means exclude covariate l on predictor k, >0 means use gamma G
+    ##' @param mm N vector of 1 - M for the region
+    ##' @param gammas G vector for the set of gammas
+
     result <- dmxxs # Only modify this for predictors with covariates
-    gammas.so.far <- 0 # Keep track of how many coefficients used
 
     for (kk in 1:nrow(kls)) {
-        gammas.here <- sum(kls[kk, ])
-        if (gammas.here == 0)
+        if (all(kls[kk, ] == 0))
             next # Nothing to do: already dmxxs[, kk]
 
-        mygammas <- gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)]
-        gammas.so.far <- gammas.so.far + gammas.here
-        result[, kk] <- dmxxs[, kk] * exp(as.matrix(zzs[, kls[kk, ]]) %*% mygammas)[mm]
+        result[, kk] <- dmxxs[, kk] * exp(as.matrix(zzs[, kls[kk, ] > 0]) %*% gammas[kls[kk, ]])[mm]
     }
 
     result
@@ -74,7 +76,7 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, ma
         print("Iterating...")
 
     bestlikeli <- -Inf # best likelihood we've seen
-    bestgammas <- rep(0, sum(kls)) # gammas corresponding to bestlikeli
+    bestgammas <- rep(0, max(kls)) # gammas corresponding to bestlikeli
     bestbetas <- rep(0, K) # betas corresponding to bestlikeli
     bestsigmas <- rep(Inf, M) # adm1.sigma corresponding to bestlikeli
     armijo.factor <- 1 # the amount of movement away from bestgammas
@@ -136,35 +138,55 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, ma
                 stage1.betas[jj, kk] <- modjj$x[kk]
         }
 
-        ## Prepare values for second stage regressions
-        stage1.logbetas <- log(abs(stage1.betas))
-        stage1.logbetas[stage1.logbetas == -Inf] <- NA
-
         ## Second stage regression for each predictor-- only for gammas
         old.gammas <- gammas
-        gammas <- rep(NA, sum(kls))
+        gammas <- rep(NA, max(kls))
 
-        gammas.so.far <- 0 # Keep track of how many coefficients used
-        for (kk in 1:K) {
-            valid <- is.finite(stage1.logbetas[, kk])
+        if (max(kls) == L * sum(rowSums(kls) > 0)) { # different gammas for each covariate
+            ## Prepare values for second stage regressions
+            stage1.logbetas <- log(abs(stage1.betas))
+            stage1.logbetas[stage1.logbetas == -Inf] <- NA
 
-            gammas.here <- sum(kls[kk, ])
-            if (gammas.here == 0)
-                next
+            for (kk in 1:K) {
+                valid <- is.finite(stage1.logbetas[, kk])
 
-            if (sum(valid) < gammas.here) {
-                gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)] <- old.gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)]
-                gammas.so.far <- gammas.so.far + gammas.here
-                next
+                if (all(kls[kk, ] == 0))
+                    next
+
+                if (sum(valid) < sum(kls[kk, ] > 0)) {
+                    gammas[kls[kk, ]] <- old.gammas[kls[kk, ]]
+                    next
+                }
+
+                yy.modkk <- stage1.logbetas[valid, kk]
+                xx.modkk <- as.matrix(cbind(rep(1, sum(valid)), zzs[valid, kls[kk, ]]))
+                modkk <- lm(yy.modkk ~ 0 + xx.modkk)
+
+                ## Prepare values for log likelihood
+                gammas[kls[kk, ]] <- modkk$coeff[-1]
             }
+        } else {
+            uniquekls <- unique(kls)
+            klssigs <- apply(kls, 1, function(row) paste(row, collapse=","))
 
-            yy.modkk <- stage1.logbetas[valid, kk]
-            xx.modkk <- as.matrix(cbind(rep(1, sum(valid)), zzs[valid, kls[kk, ]]))
-            modkk <- lm(yy.modkk ~ 0 + xx.modkk)
+            for (rr in 1:nrow(uniquekls)) {
+                ## Find all k that share this uniquekls
+                uniqueklssig <- paste(uniquekls[rr,], collapse=",")
+                kincluded <- klssigs == uniqueklssig
 
-            ## Prepare values for log likelihood
-            gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)] <- modkk$coeff[-1]
-            gammas.so.far <- gammas.so.far + gammas.here
+                stage1.logbx <- log(abs(rowSums(stage1.betas[adm1, kincluded] * dmxxs[, kincluded])))
+                valid <- is.finite(stage1.logbx)
+
+                yy.mod2 <- stage1.logbx[valid]
+                XX.mod2 <- as.matrix(rep(1, sum(valid)), sum(valid), 1)
+                for (gg in uniquekls[rr, uniquekls[rr,] > 0])
+                    XX.mod2 <- cbind(XX.mod2, zzs[valid, uniquekls[rr,] == gg])
+
+                modkk <- lm(yy.mod2 ~ 0 + xx.mod2)
+
+                ## Prepare values for log likelihood
+                gammas[uniquekls[rr, ]] <- modkk$coeff[-1]
+            }
         }
 
         ## Perform stacked regression to get betas
