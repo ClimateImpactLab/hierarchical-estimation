@@ -178,6 +178,7 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, factors
         vcv.start <- tryCatch({
             calc.vcv.ols(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, prior=prior)
         }, error=function(e) {
+            print(e)
             NULL
         })
 
