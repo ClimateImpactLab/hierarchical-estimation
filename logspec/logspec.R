@@ -253,16 +253,12 @@ stacked.betas <- function(K, L, gammas, dmyy, dmxxs.orig, zzs, kls, mm, weights)
 make.known.betas <- function(zz0, betas0) {
     function(K, L, gammas, dmyy, dmxxs.orig, zzs, kls, mm, weights) {
         expgamma0 <- rep(1, length(betas0)) # Only modify this for predictors with covariates
-        gammas.so.far <- 0 # Keep track of how many coefficients used
 
         for (kk in 1:nrow(kls)) {
-            gammas.here <- sum(kls[kk, ])
-            if (gammas.here == 0)
+            if (all(kls[kk, ] == 0))
                 next # Nothing to do
 
-            mygammas <- gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)]
-            gammas.so.far <- gammas.so.far + gammas.here
-            expgamma0[kk] <- exp(sum(zz0[kls[kk, ]] * mygammas))
+            expgamma0[kk] <- exp(sum(zz0[kls[kk, ] > 0] * gammas[kls[kk, ]]))
         }
 
         betas0 / expgamma0
@@ -282,7 +278,7 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights
 
     if (is.null(initgammas)) {
         ## Approximation 1: No covariate effect
-        gammas <- rep(0, sum(kls))
+        gammas <- rep(0, max(kls))
     } else
         gammas <- initgammas
 
@@ -295,8 +291,8 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights
 
     ## Approximation 2: Identically distributed
     objective <- function(params) {
-        gammas <- params[1:sum(kls)]
-        sigma <- rep(params[sum(kls)+1], M)
+        gammas <- params[1:max(kls)]
+        sigma <- rep(params[max(kls)+1], M)
 
         betas <- get.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
 
@@ -306,8 +302,8 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights
     params <- c(gammas, sigma)
     soln <- optim(params, objective)
 
-    gammas <- soln$par[1:sum(kls)]
-    sigma <- soln$par[sum(kls)+1]
+    gammas <- soln$par[1:max(kls)]
+    sigma <- soln$par[max(kls)+1]
 
     betas <- get.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
 
@@ -328,7 +324,7 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights
 
     print(c("Step 3:", calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights, prior)))
 
-    result <- estimate.logspec.optim.step4(dmyy, dmxxs, zzs, kls, adm1, soln$par[1:sum(kls)], sigma, weights=weights, prior=prior, get.betas=get.betas)
+    result <- estimate.logspec.optim.step4(dmyy, dmxxs, zzs, kls, adm1, soln$par[1:max(kls)], sigma, weights=weights, prior=prior, get.betas=get.betas)
 
     print(c("Step 4:", calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights, prior)))
 
@@ -339,8 +335,8 @@ estimate.logspec.optim.step4 <- function(dmyy, dmxxs, zzs, kls, adm1, gammas, si
     list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1), environment())
 
     objective2 <- function(params) {
-        gammas <- params[1:sum(kls)]
-        sigma <- params[(sum(kls)+1):length(params)]
+        gammas <- params[1:max(kls)]
+        sigma <- params[(max(kls)+1):length(params)]
 
         betas <- get.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
 
@@ -350,8 +346,8 @@ estimate.logspec.optim.step4 <- function(dmyy, dmxxs, zzs, kls, adm1, gammas, si
     params <- c(gammas, sigma)
     soln <- optim(params, objective2)
 
-    gammas <- soln$par[1:sum(kls)]
-    sigma <- soln$par[(sum(kls)+1):length(soln$par)]
+    gammas <- soln$par[1:max(kls)]
+    sigma <- soln$par[(max(kls)+1):length(soln$par)]
 
     betas <- get.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
 
