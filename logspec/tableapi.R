@@ -66,7 +66,37 @@ ta.arguments.stage1 <- function(df, outname, prednames, factorouts, demeanfile) 
         list(yy=yy, factors=factors, xxs=xxs)
 }
 
-ta.arguments <- function(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile) {
+ta.make.kls <- function(prednames, covarnames, sharedgammas=NULL) {
+    unipreds <- unique(prednames)
+    unicovars <- unique(covarnames)
+    if (!('1' %in% unicovars))
+        stop("One of the covariates must be '1' for each predictor.")
+    unicovars <- unicovars[unicovars != '1'] # Drop this covariate
+
+    if (is.null(sharedgammas)) {
+        sharedgammas <- rep(0, length(covarnames))
+        sharedgammas[covarnames != '1'] <- 1:sum(covarnames != '1')
+    } else {
+        ## Require that the each gamma only uses one covariate
+        if (length(sharedgammas) != length(covarnames))
+            stop("Sharedgammas must have the same length as predictors and covariates.")
+        for (ii in 1:max(sharedgammas)) {
+            if (length(unique(prednames[sharedgammas == ii])) > 1)
+                stop("Each gamma can only refer to one covariate (over-ride by calling search directly).")
+        }
+    }
+
+    kls <- matrix(0, ncol(xxs), ncol(zzs))
+    for (ii in 1:length(sharedgammas)) {
+        if (sharedgammas[ii] == 0)
+            next
+        kls[unipreds == prednames[ii], unicovars == covarnames[ii]] <- sharedgammas[ii]
+    }
+
+    list(unipreds=unipreds, unicovars=unicovars, kls=kls)
+}
+
+ta.arguments <- function(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile, sharedgammas=NULL) {
     list2env(ta.arguments.stage1(df, outname, prednames, factorouts, demeanfile), environment())
 
     if (!is.null(adm1name))
@@ -74,11 +104,7 @@ ta.arguments <- function(df, outname, adm1name, prednames, covarnames, factorout
     else
         adm1 <- NULL
 
-    unipreds <- unique(prednames)
-    unicovars <- unique(covarnames)
-    if (!('1' %in% unicovars))
-        stop("One of the covariates must be '1' for each predictor.")
-    unicovars <- unicovars[unicovars != '1'] # Drop this covariate
+    list2env(ta.make.kls(prednames, covarnames, sharedgammas))
 
     ## Generate an order across representative rows
     if (!is.null(adm1name)) {
@@ -91,18 +117,16 @@ ta.arguments <- function(df, outname, adm1name, prednames, covarnames, factorout
     } else
         zzs <- df[, unicovars, drop=F]
 
-    kls <- matrix(F, ncol(xxs), ncol(zzs))
-    for (kk in 1:ncol(xxs))
-        kls[kk, unicovars %in% covarnames[prednames == unipreds[kk]]] <- T
-
     if (is.null(outname))
         list(adm1=adm1, factors=factors, xxs=xxs, zzs=zzs, kls=kls)
     else {
         ## Define the standard prior
         zzs.taus <- log(sd(yy)) / apply(zzs, 2, sd)
         taus <- c()
-        for (kk in 1:nrow(kls))
-            taus <- c(taus, zzs.taus[kls[kk, ]])
+        for (ii in 1:max(kls)) {
+            ll <- which(kls == ii, arr.ind=T)[1, 2]
+            taus <- c(taus, zz.taus[ll])
+        }
         prior <- gaussian.prior(taus)
         gammapriorderiv <- gaussian.gammapriorderiv(taus)
 
@@ -111,8 +135,8 @@ ta.arguments <- function(df, outname, adm1name, prednames, covarnames, factorout
 }
 
 ## Wrapper on estimate.logspec
-ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, factorouts, weights=1, priorset='default', initset='default', demeanfile=NULL, known.betas.info=NULL) {
-    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
+ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, factorouts, weights=1, priorset='default', initset='default', demeanfile=NULL, known.betas.info=NULL, sharedgammas=NULL) {
+    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile, sharedgammas=sharedgammas), environment())
 
     ## Variables used by ta.match.marginals (can stay NULL)
     mod <- NULL
@@ -144,8 +168,9 @@ ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, fa
 
             gammapriorderiv <- function(gammas) {
                 ## Need d obj / d gamma = (d obj / d beta) (d beta / d gamma)
+                ## XXX: This prior doesn't properly account for sharedgammas
                 d.dbetas <- invmeanbetavcv %*% (obsbetas - meanbetas) # Kx1
-                dbetas.dgammas <- kls * t(matrix(meanzz, length(meanzz), nrow(kls))) # KxL
+                dbetas.dgammas <- (kls > 0) * t(matrix(meanzz, length(meanzz), nrow(kls))) # KxL
                 t(d.dbetas) %*% dbetas.dgammas + gausspriorderiv(betas, gammas)
             }
         }
@@ -169,13 +194,13 @@ ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, fa
 }
 
 ## Wrapper on estimate.vcv
-ta.estimate.vcv <- function(betas, gammas, sigmas, df, outname, adm1name, prednames, covarnames, factorouts, demeanfile=NULL, ...) {
-    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
+ta.estimate.vcv <- function(betas, gammas, sigmas, df, outname, adm1name, prednames, covarnames, factorouts, demeanfile=NULL, sharedgammas=NULL, ...) {
+    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile, sharedgammas=sharedgammas), environment())
     estimate.vcv(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, factors, prior=prior, ...)
 }
 
-ta.predict <- function(df, adm1name, prednames, covarnames, factorouts, betas, gammas, fes=NULL, demeanfile=NULL) {
-    list2env(ta.arguments(df, NULL, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
+ta.predict <- function(df, adm1name, prednames, covarnames, factorouts, betas, gammas, fes=NULL, demeanfile=NULL, sharedgammas=NULL) {
+    list2env(ta.arguments(df, NULL, adm1name, prednames, covarnames, factorouts, demeanfile, sharedgammas=sharedgammas), environment())
 
     logspec.predict(xxs, zzs, kls, adm1, betas, gammas, fes)
 }
@@ -186,14 +211,14 @@ ta.predict.betas <- function(df, prednames, covarnames, betas, gammas) {
     logspec.predict.betas(zzs, kls, betas, gammas)
 }
 
-ta.rsqr <- function(fit, df, outname, adm1name, prednames, covarnames, factorouts, weights=1, demeanfile=NULL) {
-    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
+ta.rsqr <- function(fit, df, outname, adm1name, prednames, covarnames, factorouts, weights=1, demeanfile=NULL, sharedgammas=NULL) {
+    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile, sharedgammas=sharedgammas), environment())
 
     rsqr(yy, xxs, zzs, kls, adm1, factors, fit$betas, fit$gammas, weights)
 }
 
-ta.rsqr.projected <- function(fit, df, outname, adm1name, prednames, covarnames, factorouts, weights=1, demeanfile=NULL) {
-    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
+ta.rsqr.projected <- function(fit, df, outname, adm1name, prednames, covarnames, factorouts, weights=1, demeanfile=NULL, sharedgammas=NULL) {
+    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile, sharedgammas=sharedgammas), environment())
 
     rsqr.projected(yy, xxs, zzs, kls, adm1, factors, fit$betas, fit$gammas, weights)
 }
@@ -287,58 +312,35 @@ ta.ols.predict.betas <- function(df, prednames, covarnames, mod) {
     gammas <- params$gammas
 
     result <- matrix(betas, nrow(zzs), length(betas)) # Only modify this for predictors with covariates
-    gammas.so.far <- 0 # Keep track of how many coefficients used
 
     for (kk in 1:nrow(kls)) {
-        gammas.here <- sum(kls[kk, ])
-        if (gammas.here == 0)
-            next # Nothing to do: already dmxxs[, kk]
+        if (any(kls[kk, ] > 0))
+            next # Nothing to do: already beta
 
-        mygammas <- gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)]
-        gammas.so.far <- gammas.so.far + gammas.here
-        result[, kk] <- betas[kk] + as.matrix(zzs[, kls[kk, ]]) %*% mygammas
+        result[, kk] <- betas[kk] + as.matrix(zzs[, kls[kk, ] > 0]) %*% gammas[kls[kk, ]]
     }
 
     result
 }
 
 ## Return the set of gamma indices that correspond to each predname-covarname combination
-ta.gammaorder <- function(prednames, covarnames) {
+ta.gammaorder <- function(prednames, covarnames, sharedgammas=NULL) {
     if (length(prednames) != length(covarnames))
         stop("prednames and covarnames must be the same length.")
 
-    unipreds <- unique(prednames)
-    unicovars <- unique(covarnames)
-    if (!('1' %in% unicovars))
-        stop("One of the covariates must be '1' for each predictor.")
-    unicovars <- unicovars[unicovars != '1'] # Drop this covariate
-
-    kls <- matrix(F, length(unipreds), length(unicovars))
-    for (kk in 1:length(unipreds))
-        kls[kk, unicovars %in% covarnames[prednames == unipreds[kk]]] <- T
-
-    kls.index <- matrix(0, nrow(kls), ncol(kls))
-    gammas.so.far <- 0
-    for (kk in 1:nrow(kls)) {
-        gammas.here <- sum(kls[kk, ])
-        if (gammas.here == 0)
-            next
-        kls.index[kk, kls[kk, ]] <- (gammas.so.far+1):(gammas.so.far+gammas.here)
-
-        gammas.so.far <- gammas.so.far + gammas.here
-    }
+    list2env(ta.make.kls(prednames, covarnames, sharedgammas))
 
     indices <- rep(NA, length(prednames))
     for (ii in 1:length(prednames))
         if (covarnames[ii] != '1')
-            indices[ii] <- kls.index[which(unipreds == prednames[ii]), which(unicovars == covarnames[ii])]
+            indices[ii] <- kls[which(unipreds == prednames[ii]), which(unicovars == covarnames[ii])]
 
     indices
 }
 
 ## Find the set of gammas that has the same marginal effects
-ta.match.marginals <- function(df, outname, adm1name, prednames, covarnames, factorouts, known.betas.info=NULL, weights=1, prior=noninformative.prior, mod.ols=NULL, demeanfile=NULL) {
-    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile), environment())
+ta.match.marginals <- function(df, outname, adm1name, prednames, covarnames, factorouts, known.betas.info=NULL, weights=1, prior=noninformative.prior, mod.ols=NULL, demeanfile=NULL, sharedgammas=NULL) {
+    list2env(ta.arguments(df, outname, adm1name, prednames, covarnames, factorouts, demeanfile, sharedgammas=sharedgammas), environment())
     list2env(check.arguments(yy, xxs, zzs, kls, adm1, factors), environment())
     list2env(demean.yxs(yy, xxs, factors, weights), environment())
 
@@ -357,7 +359,7 @@ ta.match.marginals <- function(df, outname, adm1name, prednames, covarnames, fac
 
     marginals.zzvars <- c()
     for (kk in 1:nrow(kls))
-        marginals.zzvars <- c(marginals.zzvars, zzvars[kls[kk,]])
+        marginals.zzvars <- c(marginals.zzvars, zzvars[kls[kk,] > 0])
 
     objective <- function(gammas) {
         if (is.null(known.betas.info))
