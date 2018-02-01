@@ -37,7 +37,8 @@ check.arguments <- function(yy, xxs, zzs, kls, adm1, factors=NULL) {
 
     if (max(kls) > 0) {
         if (!all(1:max(kls) %in% kls))
-            stop("kls must consist of 0:#gammas.")
+            stop("kls must consist of 0:num-gammas.")
+    }
 
     M <- max(adm1)
     if (length(unique(adm1)) != M)
