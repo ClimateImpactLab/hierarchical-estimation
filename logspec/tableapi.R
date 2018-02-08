@@ -81,12 +81,12 @@ ta.make.kls <- function(prednames, covarnames, sharedgammas=NULL) {
         if (length(sharedgammas) != length(covarnames))
             stop("Sharedgammas must have the same length as predictors and covariates.")
         for (ii in 1:max(sharedgammas)) {
-            if (length(unique(prednames[sharedgammas == ii])) > 1)
+            if (length(unique(covarnames[sharedgammas == ii])) > 1)
                 stop("Each gamma can only refer to one covariate (over-ride by calling search directly).")
         }
     }
 
-    kls <- matrix(0, ncol(xxs), ncol(zzs))
+    kls <- matrix(0, length(unipreds), length(unicovars))
     for (ii in 1:length(sharedgammas)) {
         if (sharedgammas[ii] == 0)
             next
@@ -104,7 +104,7 @@ ta.arguments <- function(df, outname, adm1name, prednames, covarnames, factorout
     else
         adm1 <- NULL
 
-    list2env(ta.make.kls(prednames, covarnames, sharedgammas))
+    list2env(ta.make.kls(prednames, covarnames, sharedgammas), environment())
 
     ## Generate an order across representative rows
     if (!is.null(adm1name)) {
@@ -125,7 +125,7 @@ ta.arguments <- function(df, outname, adm1name, prednames, covarnames, factorout
         taus <- c()
         for (ii in 1:max(kls)) {
             ll <- which(kls == ii, arr.ind=T)[1, 2]
-            taus <- c(taus, zz.taus[ll])
+            taus <- c(taus, zzs.taus[ll])
         }
         prior <- gaussian.prior(taus)
         gammapriorderiv <- gaussian.gammapriorderiv(taus)
@@ -328,7 +328,7 @@ ta.gammaorder <- function(prednames, covarnames, sharedgammas=NULL) {
     if (length(prednames) != length(covarnames))
         stop("prednames and covarnames must be the same length.")
 
-    list2env(ta.make.kls(prednames, covarnames, sharedgammas))
+    list2env(ta.make.kls(prednames, covarnames, sharedgammas), environment())
 
     indices <- rep(NA, length(prednames))
     for (ii in 1:length(prednames))

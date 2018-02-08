@@ -1,9 +1,9 @@
 calc.gamma.gradient <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigmas, weights) {
     obsmean <- calc.expected.demeaned(dmxxs, zzs, kls, mm, betas, gammas)
 
-    term1.all <- 2 * (dmyy - obsmean)
-    term2.byk <- calc.covariated.predictors(dmxxs, zzs, kls, mm, gammas)
-    term3.bym <- (-1 / (2 * sigmas^2))[mm]
+    term1.all <- 2 * (dmyy - obsmean) # Nx1
+    term2.byk <- calc.covariated.predictors(dmxxs, zzs, kls, mm, gammas) # NxK
+    term3.bym <- (-1 / (2 * sigmas^2))[mm] # Nx1
 
     gradients <- rep(NA, max(kls))
 
@@ -13,7 +13,7 @@ calc.gamma.gradient <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigmas
         if (any(klcombos[, 2] != klcombos[1, 2]))
             stop("Gradient does not support the same gamma on different z's.")
 
-        gradients[ii] <- sum(term1.all * betas[kk] * rowSums(term2.byk[, klcombos[, 1]]) * zzs[mm, klcombos[1, 2]] * weights * term3.bym)
+        gradients[ii] <- sum(term1.all * (term2.byk[, klcombos[, 1], drop=F] %*% betas[klcombos[, 1]]) * zzs[mm, klcombos[1, 2]] * weights * term3.bym)
     }
 
     return(gradients)

@@ -159,7 +159,7 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, ma
                 }
 
                 yy.modkk <- stage1.logbetas[valid, kk]
-                xx.modkk <- as.matrix(cbind(rep(1, sum(valid)), zzs[valid, kls[kk, ]]))
+                xx.modkk <- as.matrix(cbind(rep(1, sum(valid)), zzs[valid, kls[kk, ] > 0]))
                 modkk <- lm(yy.modkk ~ 0 + xx.modkk)
 
                 ## Prepare values for log likelihood
@@ -180,9 +180,9 @@ estimate.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, ma
                 yy.mod2 <- stage1.logbx[valid]
                 XX.mod2 <- as.matrix(rep(1, sum(valid)), sum(valid), 1)
                 for (gg in uniquekls[rr, uniquekls[rr,] > 0])
-                    XX.mod2 <- cbind(XX.mod2, zzs[valid, uniquekls[rr,] == gg])
+                    XX.mod2 <- cbind(XX.mod2, zzs[adm1[valid], uniquekls[rr,] == gg])
 
-                modkk <- lm(yy.mod2 ~ 0 + xx.mod2)
+                modkk <- lm(yy.mod2 ~ 0 + XX.mod2)
 
                 ## Prepare values for log likelihood
                 gammas[uniquekls[rr, ]] <- modkk$coeff[-1]
