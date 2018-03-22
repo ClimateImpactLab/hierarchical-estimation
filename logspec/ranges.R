@@ -127,9 +127,9 @@ calc.vcv.ols <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigma
     }
 
     params <- c(betas, gammas)
-    soln <- optim(params, objective, hessian=T)
+    hessian <- optimHess(params, objective)
 
-    solve(soln$hessian)
+    solve(hessian)
 }
 
 calc.vcv.ols.betasingle <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, bk, sigmas, weights, prior=noninformative.prior) {
@@ -138,9 +138,9 @@ calc.vcv.ols.betasingle <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, ga
         -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, prior)
     }
 
-    soln <- optim(betas[bk], objective, method="BFGS", hessian=T)
+    hessian <- optimHess(betas[bk], objective)
 
-    c(soln$par, 1 / soln$hessian)
+    1 / hessian
 }
 
 calc.vcv.ols.gammasingle <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, gk, sigmas, weights, prior=noninformative.prior) {
@@ -149,9 +149,9 @@ calc.vcv.ols.gammasingle <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, g
         -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, prior)
     }
 
-    soln <- optim(gammas[gk], objective, method="BFGS", hessian=T)
+    hessian <- optimHess(gammas[gk], objective)
 
-    c(soln$par, 1 / soln$hessian)
+    1 / hessian
 }
 
 calc.vcv.ols.gammaonly <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, gammas, sigmas, weights, prior=noninformative.prior, get.betas=stacked.betas) {
@@ -160,9 +160,9 @@ calc.vcv.ols.gammaonly <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, gammas, si
         -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, prior)
     }
 
-    soln <- optim(gammas, objective, hessian=T)
+    hessian <- optimHess(gammas, objective)
 
-    solve(soln$hessian)
+    solve(hessian)
 }
 
 calc.vcv.methast <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, iter, warmup, seeds, betas, gammas, sigmas, weights=1, prior=noninformative.prior) {
@@ -210,13 +210,11 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, factors
             ## Make sure that all on diag are reasonable
             for (bk in 1:length(betas)) {
                 update <- calc.vcv.ols.betasingle(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, bk, sigmas, weights, prior=prior)
-                betas[bk] <- update[1]
-                vcv.start[bk, bk] <- max(vcv.start[bk, bk], update[2])
+                vcv.start[bk, bk] <- max(vcv.start[bk, bk], update)
             }
             for (gk in 1:length(gammas)) {
                 update <- calc.vcv.ols.gammasingle(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, gk, sigmas, weights, prior=prior)
-                gammas[gk] <- update[1]
-                vcv.start[K+gk, K+gk] <- max(vcv.start[K+gk, K+gk], update[2])
+                vcv.start[K+gk, K+gk] <- max(vcv.start[K+gk, K+gk], update)
             }
         }
     }
