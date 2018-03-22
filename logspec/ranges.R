@@ -132,6 +132,28 @@ calc.vcv.ols <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigma
     solve(soln$hessian)
 }
 
+calc.vcv.ols.betasingle <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, bk, sigmas, weights, prior=noninformative.prior) {
+    objective <- function(param) {
+        betas[bk] <- param
+        -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, prior)
+    }
+
+    soln <- optim(betas[bk], objective, method="BFGS", hessian=T)
+
+    c(soln$par, 1 / soln$hessian)
+}
+
+calc.vcv.ols.gammasingle <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, gk, sigmas, weights, prior=noninformative.prior) {
+    objective <- function(param) {
+        gammas[gk] <- param
+        -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, prior)
+    }
+
+    soln <- optim(gammas[gk], objective, method="BFGS", hessian=T)
+
+    c(soln$par, 1 / soln$hessian)
+}
+
 calc.vcv.ols.gammaonly <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, gammas, sigmas, weights, prior=noninformative.prior, get.betas=stacked.betas) {
     objective <- function(gammas) {
         betas <- get.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
@@ -178,11 +200,25 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, factors
         vcv.start <- tryCatch({
             calc.vcv.ols(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, prior=prior)
         }, error=function(e) {
+            print(e)
             NULL
         })
 
         if (is.null(vcv.start))
             use.ols <- F
+        else {
+            ## Make sure that all on diag are reasonable
+            for (bk in 1:length(betas)) {
+                update <- calc.vcv.ols.betasingle(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, bk, sigmas, weights, prior=prior)
+                betas[bk] <- update[1]
+                vcv.start[bk, bk] <- max(vcv.start[bk, bk], update[2])
+            }
+            for (gk in 1:length(gammas)) {
+                update <- calc.vcv.ols.gammasingle(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, gk, sigmas, weights, prior=prior)
+                gammas[gk] <- update[1]
+                vcv.start[K+gk, K+gk] <- max(vcv.start[K+gk, K+gk], update[2])
+            }
+        }
     }
 
     if (use.ols) {
