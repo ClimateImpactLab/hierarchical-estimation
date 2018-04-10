@@ -314,7 +314,7 @@ ta.ols.predict.betas <- function(df, prednames, covarnames, mod) {
     result <- matrix(betas, nrow(zzs), length(betas)) # Only modify this for predictors with covariates
 
     for (kk in 1:nrow(kls)) {
-        if (any(kls[kk, ] > 0))
+        if (all(kls[kk, ] == 0))
             next # Nothing to do: already beta
 
         result[, kk] <- betas[kk] + as.matrix(zzs[, kls[kk, ] > 0]) %*% gammas[kls[kk, ]]

@@ -183,7 +183,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, maxi
 
 zoffset.adjust.betas <- function(betas, offsets, kls, gammas) {
     for (kk in 1:nrow(kls)) {
-        if (any(kls[kk, ] > 0))
+        if (all(kls[kk, ] == 0))
             next # Nothing to do
 
         betas[kk] <- betas[kk] * exp(sum(offsets[kls[kk, ] > 0] * gammas[kls[kk, ]]))

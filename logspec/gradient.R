@@ -77,7 +77,7 @@ marginal.interactions <- function(zz, kls, betas, gammas) {
     marginals <- c()
 
     for (kk in 1:length(betas)) {
-        if (any(kls[kk, ] > 0))
+        if (all(kls[kk, ] == 0))
             next # Nothing to do
 
         mymarginals <- betas[kk] * gammas[kls[kk, ]] * exp(sum(zz[kls[kk, ] > 0] * gammas[kls[kk, ]]))

@@ -13,7 +13,7 @@ logspec.predict.betas <- function(zzs, kls, betas, gammas) {
     result <- t(matrix(betas, length(betas), nrow(zzs))) # Only modify this for predictors with covariates
 
     for (kk in 1:nrow(kls)) {
-        if (any(kls[kk, ] > 0))
+        if (all(kls[kk, ] == 0))
             next # Nothing to do: already beta
 
         result[, kk] <- betas[kk] * exp(as.matrix(zzs[, kls[kk, ], drop=F]) %*% gammas[kls[kk, ]])
