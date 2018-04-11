@@ -118,10 +118,10 @@ ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, fa
     ## Variables used by ta.match.marginals (can stay NULL)
     mod <- NULL
 
-    if (priorset == 'none') {
+    if (priorset == 'none' || priorset == 'default') {
         prior <- noninformative.prior
         gammapriorderiv <- noninformative.gammapriorderiv
-    } else if (priorset == 'betaprior' || (priorset == 'default' && is.null(known.betas.info))) {
+    } else if (priorset == 'betaprior' || (priorset == 'betaforce' && is.null(known.betas.info))) {
         ## Determine mean betas
         mod <- ta.ols(df, outname, adm1name, prednames, covarnames, factorouts, weights=weights)
         meanzz <- get.meanzz(df, covarnames, weights)
@@ -161,7 +161,7 @@ ta.estimate.logspec <- function(df, outname, adm1name, prednames, covarnames, fa
         initgammas <- NULL
 
     ## By default, force betas to match at zz0
-    if (priorset != 'default')
+    if (priorset != 'betaforce')
         known.betas.info <- NULL # Don't pass to search
 
     search.logspec(yy, xxs, zzs, kls, adm1, factors, weights=weights,
