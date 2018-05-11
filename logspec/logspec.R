@@ -331,6 +331,21 @@ estimate.logspec.optim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights
     result
 }
 
+estimate.logspec.optim.step1.knownsigma <- function(dmyy, dmxxs, zzs, kls, adm1, gammas, sigma, weights=1, prior=noninformative.prior, get.betas=stacked.betas) {
+    list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1), environment())
+
+    objective1 <- function(gammas) {
+        betas <- get.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
+        -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigma, weights, prior)
+    }
+
+    soln <- optim(gammas, objective1)
+
+    betas <- get.betas(K, L, soln$par, dmyy, dmxxs, zzs, kls, adm1, weights)
+
+    list(betas=betas, gammas=soln$par)
+}
+
 estimate.logspec.optim.step4 <- function(dmyy, dmxxs, zzs, kls, adm1, gammas, sigma, weights=1, prior=noninformative.prior, get.betas=stacked.betas) {
     list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1), environment())
 

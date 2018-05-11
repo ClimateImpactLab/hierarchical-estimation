@@ -57,9 +57,12 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, maxi
     if (skipmethod != 3) {
         print("Search: Optimization")
         if (is.null(sigmas))
-            result <- estimate.logspec.optim.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, initgammas=gammas, prior=prior)
-        else
-            result <- estimate.logspec.optim.step4(dmyy, dmxxs, zzs, kls, adm1, gammas, sigmas, weights=weights, prior=prior, get.betas=get.betas)
+            result <- estimate.logspec.optim.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, initgammas=gammas, prior=prior, get.betas=get.betas)
+        else {
+            result1 <- estimate.logspec.optim.step1.knownsigma(dmyy, dmxxs, zzs, kls, adm1, gammas, sigmas, weights=weights, prior=prior, get.betas=get.betas)
+            print(paste("Step 1:", calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, result1$betas, result1$gammas, sigmas, weights, prior)))
+            result <- estimate.logspec.optim.step4(dmyy, dmxxs, zzs, kls, adm1, result1$gammas, sigmas, weights=weights, prior=prior, get.betas=get.betas)
+        }
 
         likeli <- calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, result$betas, result$gammas, result$sigma, weights, prior)
 
