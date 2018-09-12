@@ -21,7 +21,7 @@ calc.likeli.withsigma <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigm
 make.methast.betagamma.likeli <- function(K, L, dmxxs, dmyy, zzs, kls, mm, weights, prior) {
     function(param) {
         beta <- param[1:K]
-        gamma <- param[(K+1):(K+sum(kls))]
+        gamma <- param[(K+1):(K+max(kls))]
         calc.likeli.nosigma(dmxxs, dmyy, zzs, kls, mm, beta, gamma, weights, prior)
     }
 }
@@ -29,7 +29,7 @@ make.methast.betagamma.likeli <- function(K, L, dmxxs, dmyy, zzs, kls, mm, weigh
 make.methast.betagamma.sigma.likeli <- function(K, L, dmxxs, dmyy, zzs, kls, mm, sigmas, weights, prior) {
     function(param) {
         betas <- param[1:K]
-        gammas <- param[(K+1):(K+sum(kls))]
+        gammas <- param[(K+1):(K+max(kls))]
         calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigmas, weights, prior)
     }
 }
@@ -45,15 +45,15 @@ methast.betagamma <- function(K, L, dmxxs, dmyy, zzs, kls, mm, iter, beta0, gamm
     likelifunc <- make.methast.betagamma.likeli(K, L, dmxxs, dmyy, zzs, kls, mm, weights, prior)
     result <- methast(iter, c(beta0, gamma0), c(betaerr, gammaerr), likelifunc)
 
-    list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+sum(kls))], best.likeli=likelifunc(result$params[result$best.index,]), best.index=result$best.index)
+    list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+max(kls))], best.likeli=likelifunc(result$params[result$best.index,]), best.index=result$best.index)
 }
 
 methast.betagamma.sigma <- function(K, L, dmxxs, dmyy, zzs, kls, mm, iter, beta0, gamma0, sigmas, betaerr, gammaerr, weights=1, prior=noninformative.prior) {
     likelifunc <- make.methast.betagamma.sigma.likeli(K, L, dmxxs, dmyy, zzs, kls, mm, sigmas, weights, prior)
     result <- methast(iter, c(beta0, gamma0), c(betaerr, gammaerr), likelifunc)
 
-    if (sum(kls) > 0)
-        list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+sum(kls))], best.likeli=likelifunc(result$params[result$best.index,]), best.index=result$best.index)
+    if (max(kls) > 0)
+        list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+max(kls))], best.likeli=likelifunc(result$params[result$best.index,]), best.index=result$best.index)
     else
         list(betas=result$params[, 1:K], gammas=matrix(NA, nrow(result$params), 0), best.likeli=likelifunc(result$params[result$best.index,]), best.index=result$best.index)
 }
@@ -61,7 +61,7 @@ methast.betagamma.sigma <- function(K, L, dmxxs, dmyy, zzs, kls, mm, iter, beta0
 methast.gamma.sigma <- function(K, L, dmxxs, dmyy, zzs, kls, mm, iter, get.betas, gamma0, sigmas, gammaerr, weights=1, prior=noninformative.prior) {
     likelifunc <- make.methast.gamma.sigma.likeli(K, L, dmxxs, dmyy, zzs, kls, mm, sigmas, weights, prior, get.betas)
 
-    if (sum(kls) == 0) { # Nothing to do
+    if (max(kls) == 0) { # Nothing to do
         betas <- get.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, mm, weights)
         return(list(betas=betas, gammas=gamma0, best.likeli=likelifunc(gamma0), best.index=NA))
     }
@@ -79,7 +79,7 @@ repeated.methast.betagamma <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, iter, 
                                c(beta0, gamma0), c(betaerr, gammaerr),
                                make.methast.betagamma.likeli(K, L, dmxxs, dmyy, zzs, kls, adm1, weights, prior))
 
-    list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+sum(kls))], best.beta=result$best.param[1:K], best.gamma=result$best.param[(K+1):(K+sum(kls))])
+    list(betas=result$params[, 1:K], gammas=result$params[, (K+1):(K+max(kls))], best.beta=result$best.param[1:K], best.gamma=result$best.param[(K+1):(K+max(kls))])
 }
 
 ## Single Metropolis-Hastings with automatic tuning
@@ -122,14 +122,36 @@ repeated.methast.each.gammaonly <- function(K, L, dmxxs, dmyy, zzs, kls, mm, ite
 calc.vcv.ols <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, prior=noninformative.prior) {
     objective <- function(params) {
         betas <- params[1:K]
-        gammas <- params[(K+1):(K+sum(kls))]
+        gammas <- params[(K+1):(K+max(kls))]
         -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, prior)
     }
 
     params <- c(betas, gammas)
-    soln <- optim(params, objective, hessian=T)
+    hessian <- optimHess(params, objective)
 
-    solve(soln$hessian)
+    solve(hessian)
+}
+
+calc.vcv.ols.betasingle <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, bk, sigmas, weights, prior=noninformative.prior) {
+    objective <- function(param) {
+        betas[bk] <- param
+        -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, prior)
+    }
+
+    hessian <- optimHess(betas[bk], objective)
+
+    1 / hessian
+}
+
+calc.vcv.ols.gammasingle <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, gk, sigmas, weights, prior=noninformative.prior) {
+    objective <- function(param) {
+        gammas[gk] <- param
+        -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, prior)
+    }
+
+    hessian <- optimHess(gammas[gk], objective)
+
+    1 / hessian
 }
 
 calc.vcv.ols.gammaonly <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, gammas, sigmas, weights, prior=noninformative.prior, get.betas=stacked.betas) {
@@ -138,9 +160,9 @@ calc.vcv.ols.gammaonly <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, gammas, si
         -calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, betas, gammas, sigmas, weights, prior)
     }
 
-    soln <- optim(gammas, objective, hessian=T)
+    hessian <- optimHess(gammas, objective)
 
-    solve(soln$hessian)
+    solve(hessian)
 }
 
 calc.vcv.methast <- function(K, L, dmxxs, dmyy, zzs, kls, adm1, iter, warmup, seeds, betas, gammas, sigmas, weights=1, prior=noninformative.prior) {
@@ -184,6 +206,17 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, factors
 
         if (is.null(vcv.start))
             use.ols <- F
+        else {
+            ## Make sure that all on diag are reasonable
+            for (bk in 1:length(betas)) {
+                update <- calc.vcv.ols.betasingle(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, bk, sigmas, weights, prior=prior)
+                vcv.start[bk, bk] <- max(vcv.start[bk, bk], update)
+            }
+            for (gk in 1:length(gammas)) {
+                update <- calc.vcv.ols.gammasingle(K, L, dmxxs, dmyy, zzs, kls, adm1, betas, gammas, gk, sigmas, weights, prior=prior)
+                vcv.start[K+gk, K+gk] <- max(vcv.start[K+gk, K+gk], update)
+            }
+        }
     }
 
     if (use.ols) {
@@ -193,7 +226,7 @@ estimate.vcv <- function(betas, gammas, sigmas, yy, xxs, zzs, kls, adm1, factors
         se.start <- c(result.each$betaerr, result.each$gammaerr)
     }
 
-    result <- repeated.methast.betagamma(K, L, dmxxs, dmyy, zzs, kls, adm1, iter, warmup, seeds, betas, gammas, se.start[1:K], se.start[(K+1):(K+sum(kls))], weights=1, prior=prior)
+    result <- repeated.methast.betagamma(K, L, dmxxs, dmyy, zzs, kls, adm1, iter, warmup, seeds, betas, gammas, se.start[1:K], se.start[(K+1):(K+max(kls))], weights=1, prior=prior)
     if (!use.ols)
         vcv.start <- cov(cbind(result$betas, result$gammas))
 

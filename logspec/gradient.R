@@ -1,19 +1,19 @@
 calc.gamma.gradient <- function(dmxxs, dmyy, zzs, kls, mm, betas, gammas, sigmas, weights) {
     obsmean <- calc.expected.demeaned(dmxxs, zzs, kls, mm, betas, gammas)
 
-    klcombos <- which(kls, arr.ind=T)
+    term1.all <- 2 * (dmyy - obsmean) # Nx1
+    term2.byk <- calc.covariated.predictors(dmxxs, zzs, kls, mm, gammas) # NxK
+    term3.bym <- (-1 / (2 * sigmas^2))[mm] # Nx1
 
-    term1.all <- 2 * (dmyy - obsmean)
-    term2.byk <- calc.covariated.predictors(dmxxs, zzs, kls, mm, gammas)
-    term3.bym <- (-1 / (2 * sigmas^2))[mm]
+    gradients <- rep(NA, max(kls))
 
-    gradients <- rep(NA, nrow(klcombos))
+    for (ii in 1:max(kls)) {
+        klcombos <- which(kls == ii, arr.ind=T)
 
-    for (ii in 1:nrow(klcombos)) {
-        kk <- klcombos[ii, 1]
-        ll <- klcombos[ii, 2]
+        if (any(klcombos[, 2] != klcombos[1, 2]))
+            stop("Gradient does not support the same gamma on different z's.")
 
-        gradients[ii] <- sum(term1.all * betas[kk] * term2.byk[, kk] * zzs[mm, ll] * weights * term3.bym)
+        gradients[ii] <- sum(term1.all * (term2.byk[, klcombos[, 1], drop=F] %*% betas[klcombos[, 1]]) * zzs[mm, klcombos[1, 2]] * weights * term3.bym)
     }
 
     return(gradients)
@@ -32,7 +32,7 @@ estimate.logspec.gammaoptim.nograd <- function(yy, xxs, zzs, kls, adm1, factors,
     list2env(demean.yxs(yy, xxs, factors, weights), environment())
 
     if (is.null(initgammas))
-        initgammas <- rep(0, sum(kls))
+        initgammas <- rep(0, max(kls))
 
     objective <- function(gammas) {
         betas <- get.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
@@ -54,7 +54,7 @@ estimate.logspec.gammaoptim <- function(yy, xxs, zzs, kls, adm1, factors, sigmas
 estimate.logspec.gammaoptim.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, sigmas, weights=1, initgammas=NULL, prior=noninformative.prior, gammapriorderiv=noninformative.gammapriorderiv, get.betas=stacked.betas) {
     list2env(check.arguments(dmyy, dmxxs, zzs, kls, adm1), environment())
     if (is.null(initgammas))
-        initgammas <- rep(0, sum(kls))
+        initgammas <- rep(0, max(kls))
 
     objective <- function(gammas) {
         betas <- get.betas(K, L, gammas, dmyy, dmxxs, zzs, kls, adm1, weights)
@@ -77,14 +77,10 @@ marginal.interactions <- function(zz, kls, betas, gammas) {
     marginals <- c()
 
     for (kk in 1:length(betas)) {
-        gammas.here <- sum(kls[kk, ])
-        if (gammas.here == 0)
-            next # Nothing to do: already dmxxs[, kk]
+        if (all(kls[kk, ] == 0))
+            next # Nothing to do
 
-        gammas.so.far <- length(marginals)
-        mygammas <- gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)]
-
-        mymarginals <- betas[kk] * mygammas * exp(sum(zz[kls[kk, ]] * mygammas))
+        mymarginals <- betas[kk] * gammas[kls[kk, ]] * exp(sum(zz[kls[kk, ] > 0] * gammas[kls[kk, ]]))
         marginals <- c(marginals, mymarginals)
     }
 

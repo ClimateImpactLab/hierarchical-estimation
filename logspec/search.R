@@ -37,7 +37,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, maxi
         }
     }
 
-    if (skipmethod != 2 && sum(kls) > 0 && !is.null(sigmas)) {
+    if (skipmethod != 2 && max(kls) > 0 && !is.null(sigmas)) {
         print("Search: Gradient ascent")
         result <- estimate.logspec.gammaoptim.demeaned(dmyy, dmxxs, zzs, kls, adm1, sigmas=sigmas, weights=weights, initgammas=gammas, prior=prior, gammapriorderiv=gammapriorderiv, get.betas=get.betas)
         if (-result$value > bestlikeli) {
@@ -57,9 +57,12 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, maxi
     if (skipmethod != 3) {
         print("Search: Optimization")
         if (is.null(sigmas))
-            result <- estimate.logspec.optim.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, initgammas=gammas, prior=prior)
-        else
-            result <- estimate.logspec.optim.step4(dmyy, dmxxs, zzs, kls, adm1, gammas, sigmas, weights=weights, prior=prior, get.betas=get.betas)
+            result <- estimate.logspec.optim.demeaned(dmyy, dmxxs, zzs, kls, adm1, weights=weights, initgammas=gammas, prior=prior, get.betas=get.betas)
+        else {
+            result1 <- estimate.logspec.optim.step1.knownsigma(dmyy, dmxxs, zzs, kls, adm1, gammas, sigmas, weights=weights, prior=prior, get.betas=get.betas)
+            print(paste("Step 1:", calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, result1$betas, result1$gammas, sigmas, weights, prior)))
+            result <- estimate.logspec.optim.step4(dmyy, dmxxs, zzs, kls, adm1, result1$gammas, sigmas, weights=weights, prior=prior, get.betas=get.betas)
+        }
 
         likeli <- calc.likeli.demeaned(dmxxs, dmyy, zzs, kls, adm1, result$betas, result$gammas, result$sigma, weights, prior)
 
@@ -90,7 +93,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, maxi
                     c(result.each$betaerr, result.each$gammaerr)
                 })
                 betases <- ses[1:K]
-                gammases <- ses[(K+1):(K+sum(kls))]
+                gammases <- ses[(K+1):(K+max(kls))]
             } else {
                 gammases <- tryCatch({
                     vcv <- calc.vcv.ols.gammaonly(K, L, dmxxs, dmyy, zzs, kls, adm1, gammas, sigmas, weights, prior=prior)
@@ -131,7 +134,7 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, maxi
         }
     }
 
-    if (skipmethod != 5 && sum(kls) > 0) {
+    if (skipmethod != 5 && max(kls) > 0) {
         print("Recentering covariates")
 
         ## Decide on offsets
@@ -182,16 +185,11 @@ search.logspec.demeaned <- function(dmyy, dmxxs, zzs, kls, adm1, weights=1, maxi
 }
 
 zoffset.adjust.betas <- function(betas, offsets, kls, gammas) {
-    gammas.so.far <- 0 # Keep track of how many coefficients used
-
     for (kk in 1:nrow(kls)) {
-        gammas.here <- sum(kls[kk, ])
-        if (gammas.here == 0)
+        if (all(kls[kk, ] == 0))
             next # Nothing to do
 
-        mygammas <- gammas[(gammas.so.far+1):(gammas.so.far+gammas.here)]
-        gammas.so.far <- gammas.so.far + gammas.here
-        betas[kk] <- betas[kk] * exp(sum(offsets[kls[kk, ]] * mygammas))
+        betas[kk] <- betas[kk] * exp(sum(offsets[kls[kk, ] > 0] * gammas[kls[kk, ]]))
     }
 
     betas

@@ -17,7 +17,7 @@ test.estimate.logspec <- function() {
 
     result <- search.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                              df[!duplicated(df$adm1), c('meant', 'log_gdppc')],
-                             matrix(T, 4, 2), df$adm1, df$adm2)
+                             matrix(1:8, 4, 2), df$adm1, df$adm2)
 
     checkEqualsNumeric(result$betas, bineffects[-3], tolerance=.01)
 

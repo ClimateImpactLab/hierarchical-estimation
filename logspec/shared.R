@@ -35,8 +35,10 @@ check.arguments <- function(yy, xxs, zzs, kls, adm1, factors=NULL) {
     if (ncol(kls) != L)
         stop("kls must have as many columns as zzs.")
 
-    if (!is.logical(kls))
-        stop("kls must consist only of trues and falses.")
+    if (max(kls) > 0) {
+        if (!all(1:max(kls) %in% kls))
+            stop("kls must consist of 0:num-gammas.")
+    }
 
     M <- max(adm1)
     if (length(unique(adm1)) != M)

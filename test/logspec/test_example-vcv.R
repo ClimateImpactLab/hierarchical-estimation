@@ -10,22 +10,22 @@ test.estimate.vcv <- function() {
     ## Find the coefficients
     result <- estimate.logspec(df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                                df[!duplicated(df$adm1), c('meant', 'log_gdppc')],
-                               matrix(T, 4, 2), df$adm1, df$adm2)
+                               matrix(1:8, 4, 2), df$adm1, df$adm2)
 
     ## Determine the VCV for these coefficient
     se.ols <- estimate.vcv(result$betas, result$gammas, result$sigmas,
                            df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                            df[!duplicated(df$adm1), c('meant', 'log_gdppc')],
-                           matrix(T, 4, 2), df$adm1, df$adm2, use.ols=T)$se
+                           matrix(1:8, 4, 2), df$adm1, df$adm2, use.ols=T)$se
 
     se.bayes <- estimate.vcv(result$betas, result$gammas, result$sigmas,
                              df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                              df[!duplicated(df$adm1), c('meant', 'log_gdppc')],
-                             matrix(T, 4, 2), df$adm1, df$adm2, use.ols=F)$se
+                             matrix(1:8, 4, 2), df$adm1, df$adm2, use.ols=F)$se
 
     ## Apply weights
     estimate.vcv(result$betas, result$gammas, result$sigmas,
                  df$rate, df[, c('bin1', 'bin2', 'bin4', 'bin5')],
                  df[!duplicated(df$adm1), c('meant', 'log_gdppc')],
-                 matrix(T, 4, 2), df$adm1, df$adm2, use.ols=T, weights=rexp(nrow(df)))$se
+                 matrix(1:8, 4, 2), df$adm1, df$adm2, use.ols=T, weights=rexp(nrow(df)))$se
 }
